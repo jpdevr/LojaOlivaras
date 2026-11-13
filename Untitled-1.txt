@@ -1,0 +1,51 @@
+//AUTH CADASTRO E LOGIN
+POST lojaolivaras/api/auth/register
+POST lojaolivaras/api/auth/login
+POST lojaolivaras/api/auth/reset-password
+POST lojaolivaras/api/auth/forgot-password
+
+//ACOES DE PERFIL
+POST lojaolivaras/api/profile/edit
+POST lojaolivaras/api/profile/edit/photo
+POST lojaolivaras/api/profile/change-password
+POST lojaolivaras/api/profile/deleteaccount
+GET lojaolivaras/api/profile/orders/
+GET lojaolivaras/api/profile/orders/{id}
+GET lojaolivaras/api/profile/address
+POST lojaolivaras/api/profile/address/add
+POST lojaolivaras/api/profile/address/edit/{id}
+POST lojaolivaras/api/profile/address/delete/{id}
+
+//CATALOGO
+GET lojaolivaras/api/catalogo/list-item
+GET lojaolivaras/api/catalogo/search
+GET lojaolivaras/api/catalogo/item-detail/{id}
+
+//CARRINHO
+GET lojaolivaras/api/cart/list
+POST lojaolivaras/api/cart/add
+POST lojaolivaras/api/cart/remove
+POST lojaolivaras/api/cart/update-quantity/{itemId}
+POST lojaolivaras/api/cart/clear
+GET lojaolivaras/api/cart/total
+
+//CHECKOUT
+POST lojaolivaras/api/checkout/confirm
+GET lojaolivaras/api/checkout/addresses
+GET lojaolivaras/api/checkout/order/{id}
+GET lojaolivaras/api/checkout/payment-status/{orderId}
+
+//ADMIN - PRODUTOS E ESTOQUE
+POST lojaolivaras/api/admin/products/add
+POST lojaolivaras/api/admin/products/edit/{id}
+POST lojaolivaras/api/admin/products/delete/{id}
+GET lojaolivaras/api/admin/products/list
+//Ajusta quantidade de um produto ja cadastrado
+POST lojaolivaras/api/admin/stock/add
+POST lojaolivaras/api/admin/stock/remove
+GET lojaolivaras/api/admin/stock/list
+
+//ADMIN - DASHBOARD
+GET lojaolivaras/api/admin/dashboard/summary
+GET lojaolivaras/api/admin/dashboard/top-selling-products
+GET lojaolivaras/api/admin/dashboard/recent-orders
