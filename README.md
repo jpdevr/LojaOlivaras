@@ -12,14 +12,25 @@ docker compose up --build
 
 - API: `http://localhost:8080/lojaolivaras/api`
 - Health check: `http://localhost:8080/api/v1/health`
-- Swagger (health check inicial): `http://localhost:8080/swagger-ui.html`
+- Swagger: `http://localhost:8080/swagger-ui.html`
 - PostgreSQL: `localhost:5432`
 
 Parar os serviços: `docker compose down`. Para remover também os dados locais do banco: `docker compose down -v`.
 
 ## Estado atual
 
-O backend tem autenticação e o módulo de perfil/endereço. O Swagger documenta os endpoints em `http://localhost:8080/swagger-ui.html`.
+O backend tem autenticação, perfil/endereço, catálogo, carrinho, checkout/pedidos e wishlist. O Swagger documenta os endpoints em `http://localhost:8080/swagger-ui.html`.
+
+### Documentação e diagnóstico
+
+| Método | Rota | Uso |
+| --- | --- | --- |
+| `GET` | `/swagger-ui.html` | Abre a interface do Swagger. |
+| `GET` | `/v3/api-docs` | Retorna a especificação OpenAPI em JSON. |
+| `GET` | `/v3/api-docs/swagger-config` | Retorna a configuração usada pelo Swagger UI. |
+| `GET` | `/api/v1/health` | Health check simples da API. |
+| `GET` | `/actuator/health` | Diagnóstico de saúde do Spring Boot. |
+| `GET` | `/actuator/info` | Informações da aplicação. |
 
 ### Cadastro e login
 
@@ -43,6 +54,8 @@ Todas as rotas abaixo exigem `Authorization: Bearer <token>` obtido no login. O 
 | `POST` | `/lojaolivaras/api/profile/address/add` | Cadastra endereço; o primeiro vira padrão automaticamente. |
 | `POST` | `/lojaolivaras/api/profile/address/edit/{id}` | Substitui um endereço da própria conta. |
 | `POST` | `/lojaolivaras/api/profile/address/delete/{id}` | Remove endereço próprio; se era padrão, promove outro. |
+| `GET` | `/lojaolivaras/api/profile/orders/` | Lista os próprios pedidos, paginados; também aceita sem a barra final. |
+| `GET` | `/lojaolivaras/api/profile/orders/{id}` | Consulta um pedido próprio. |
 
 ### Catálogo
 
@@ -80,7 +93,7 @@ O checkout exige um endereço cadastrado na própria conta e um carrinho não va
 | `GET` | `/lojaolivaras/api/checkout/order/{id}` | Consulta um pedido próprio. |
 | `GET` | `/lojaolivaras/api/checkout/payment-status/{orderId}` | Consulta estado e referência do pagamento simulado de um pedido próprio. |
 
-O histórico também fica disponível pelo perfil: `GET /lojaolivaras/api/profile/orders/` (paginado) e `GET /lojaolivaras/api/profile/orders/{id}`. O detalhe do pedido também pode ser consultado pela rota de checkout acima.
+O detalhe do pedido também pode ser consultado pela rota de checkout acima.
 
 Após exclusão da conta, o carrinho é removido e dados de endereço copiados para pedidos são anonimizados.
 
