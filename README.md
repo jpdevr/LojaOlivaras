@@ -17,6 +17,19 @@ docker compose up --build
 
 Parar os serviços: `docker compose down`. Para remover também os dados locais do banco: `docker compose down -v`.
 
+## Frontend Angular
+
+O frontend fica em `frontend/` e usa Angular com TypeScript. A tela atual contém login e cadastro com HTML sem folha de estilos; os formulários chamam as rotas de auth do backend.
+
+Requisitos: Node.js 24 e npm. Inicie o backend e, em outro terminal, rode:
+
+```powershell
+cd frontend
+npm start
+```
+
+Abra `http://localhost:4200`. O token retornado pelo login fica apenas em memória enquanto a aplicação estiver aberta.
+
 ## Estado atual
 
 O backend tem autenticação, perfil/endereço, catálogo, carrinho, checkout/pedidos e wishlist. O Swagger documenta os endpoints em `http://localhost:8080/swagger-ui.html`.
