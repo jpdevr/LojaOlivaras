@@ -71,7 +71,8 @@ public class SecurityConfig {
                                 "/lojaolivaras/api/auth/google", "/lojaolivaras/api/catalogo/**")
                         .permitAll()
                         .requestMatchers("/lojaolivaras/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/lojaolivaras/api/profile", "/lojaolivaras/api/profile/**")
+                        .requestMatchers("/lojaolivaras/api/profile", "/lojaolivaras/api/profile/**",
+                                "/lojaolivaras/api/cart/**", "/lojaolivaras/api/checkout/**")
                         .hasRole("CUSTOMER")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(config -> config.jwtAuthenticationConverter(jwt)))

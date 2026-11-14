@@ -3,6 +3,8 @@ package br.com.olivaras.api.catalog.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -68,6 +70,17 @@ public class WandProductEntity {
     private Instant updatedAt;
 
     protected WandProductEntity() {}
+
+    public void decreaseStock(int quantity) {
+        if (quantity < 1 || stock < quantity) throw new IllegalArgumentException("Estoque insuficiente");
+        stock -= quantity;
+    }
+
+    @PrePersist
+    void beforeInsert() { Instant now = Instant.now(); createdAt = now; updatedAt = now; }
+
+    @PreUpdate
+    void beforeUpdate() { updatedAt = Instant.now(); }
 
     public UUID getId() { return id; }
     public String getSlug() { return slug; }

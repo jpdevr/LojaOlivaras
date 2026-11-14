@@ -56,6 +56,34 @@ As consultas do catálogo são públicas. Os itens são páginas ordenadas pelo 
 
 O seed inicial contém 20 varinhas com informações documentadas, incluindo uma baseada em detalhes de produção de filme. Características sem confirmação ficam vazias, preços e estoques são fictícios para a atividade e as imagens ficam sem URL até haver material autorizado. Cada item guarda a referência e a categoria da fonte.
 
+### Carrinho
+
+As rotas exigem JWT Bearer de uma conta `CUSTOMER`. Cada conta possui um carrinho persistido. O total é recalculado pelo preço atual do catálogo; quantidade por produto aceita de 1 a 99. O carrinho não reserva estoque: a disponibilidade é conferida novamente na finalização.
+
+| Método | Rota | Uso |
+| --- | --- | --- |
+| `GET` | `/lojaolivaras/api/cart/list` | Lista itens, disponibilidade e total do próprio carrinho. |
+| `POST` | `/lojaolivaras/api/cart/add` | Adiciona ou soma quantidade. Corpo: `{"itemId":"<UUID do produto>","quantity":1}`. |
+| `POST` | `/lojaolivaras/api/cart/remove` | Remove produto. Corpo: `{"itemId":"<UUID do produto>"}`. |
+| `POST` | `/lojaolivaras/api/cart/update-quantity/{itemId}` | Define nova quantidade. Corpo: `{"quantity":2}`. |
+| `POST` | `/lojaolivaras/api/cart/clear` | Esvazia o carrinho. |
+| `GET` | `/lojaolivaras/api/cart/total` | Consulta total e quantidade de unidades. |
+
+### Checkout e pedidos
+
+O checkout exige um endereço cadastrado na própria conta e um carrinho não vazio. A confirmação grava preço, características do produto e endereço como fotografia do momento do pedido, desconta o estoque atomicamente e esvazia o carrinho. O pagamento recebe o estado `SIMULATED_APPROVED`; nenhuma cobrança ou integração financeira ocorre.
+
+| Método | Rota | Uso |
+| --- | --- | --- |
+| `POST` | `/lojaolivaras/api/checkout/confirm` | Cria o pedido e aprova o pagamento fictício. Corpo: `{"addressId":"<UUID do endereço>"}`. |
+| `GET` | `/lojaolivaras/api/checkout/addresses` | Lista endereços próprios para entrega. |
+| `GET` | `/lojaolivaras/api/checkout/order/{id}` | Consulta um pedido próprio. |
+| `GET` | `/lojaolivaras/api/checkout/payment-status/{orderId}` | Consulta estado e referência do pagamento simulado de um pedido próprio. |
+
+O histórico também fica disponível pelo perfil: `GET /lojaolivaras/api/profile/orders/` (paginado) e `GET /lojaolivaras/api/profile/orders/{id}`. O detalhe do pedido também pode ser consultado pela rota de checkout acima.
+
+Após exclusão da conta, o carrinho é removido e dados de endereço copiados para pedidos são anonimizados.
+
 Exemplos de corpos:
 
 ```json

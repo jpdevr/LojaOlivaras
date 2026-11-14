@@ -5,6 +5,7 @@ import br.com.olivaras.api.auth.dto.UserResponse;
 import br.com.olivaras.api.auth.entity.UserEntity;
 import br.com.olivaras.api.auth.repository.UserRepository;
 import br.com.olivaras.api.auth.service.GoogleTokenVerifier;
+import br.com.olivaras.api.order.service.CustomerCommerceCleanupService;
 import br.com.olivaras.api.profile.dto.ChangePasswordRequest;
 import br.com.olivaras.api.profile.dto.DeleteAccountRequest;
 import br.com.olivaras.api.profile.dto.UpdateProfileRequest;
@@ -23,13 +24,15 @@ public class ProfileService {
     private final AddressRepository addresses;
     private final PasswordEncoder passwordEncoder;
     private final GoogleTokenVerifier googleTokenVerifier;
+    private final CustomerCommerceCleanupService commerceCleanup;
 
     public ProfileService(UserRepository users, AddressRepository addresses, PasswordEncoder passwordEncoder,
-                         GoogleTokenVerifier googleTokenVerifier) {
+                         GoogleTokenVerifier googleTokenVerifier, CustomerCommerceCleanupService commerceCleanup) {
         this.users = users;
         this.addresses = addresses;
         this.passwordEncoder = passwordEncoder;
         this.googleTokenVerifier = googleTokenVerifier;
+        this.commerceCleanup = commerceCleanup;
     }
 
     @Transactional(readOnly = true)
@@ -84,6 +87,7 @@ public class ProfileService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Método de autenticação indisponível");
         }
 
+        commerceCleanup.anonymize(userId);
         addresses.deleteAllByUser_Id(userId);
         addresses.flush();
         user.anonymizeAndDeactivate(Instant.now());
