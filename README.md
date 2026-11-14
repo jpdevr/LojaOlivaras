@@ -84,6 +84,19 @@ O histórico também fica disponível pelo perfil: `GET /lojaolivaras/api/profil
 
 Após exclusão da conta, o carrinho é removido e dados de endereço copiados para pedidos são anonimizados.
 
+### Wishlist
+
+As rotas exigem JWT Bearer de uma conta `CUSTOMER`. A wishlist pertence ao usuário autenticado; `itemId` é o UUID do produto do catálogo. Adicionar o mesmo produto novamente não cria duplicata. Itens fora de estoque continuam salvos, mas são marcados como indisponíveis.
+
+| Método | Rota | Uso |
+| --- | --- | --- |
+| `GET` | `/lojaolivaras/api/wishlist/list` | Lista itens salvos e disponibilidade atual. |
+| `POST` | `/lojaolivaras/api/wishlist/add` | Salva produto. Corpo: `{"itemId":"<UUID do produto>"}`. |
+| `POST` | `/lojaolivaras/api/wishlist/remove` | Remove produto. Corpo: `{"itemId":"<UUID do produto>"}`. |
+| `POST` | `/lojaolivaras/api/wishlist/clear` | Limpa a própria wishlist. |
+
+A wishlist também é removida quando a conta é excluída.
+
 Exemplos de corpos:
 
 ```json
