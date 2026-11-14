@@ -2,6 +2,8 @@ package br.com.olivaras.api.auth.service;
 
 import java.util.Set;
 import java.util.Locale;
+import java.time.Duration;
+import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
@@ -55,12 +57,24 @@ public class GoogleTokenVerifier {
                 throw new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.UNAUTHORIZED, "Token Google inválido");
             }
-            return new GoogleIdentity(subject, email.trim().toLowerCase(Locale.ROOT));
+            return new GoogleIdentity(subject, email.trim().toLowerCase(Locale.ROOT), jwt.getIssuedAt());
         } catch (JwtException ex) {
             throw new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.UNAUTHORIZED, "Token Google inválido", ex);
         }
     }
 
-    public record GoogleIdentity(String subject, String email) {}
+    public GoogleIdentity verifyFresh(String idToken, Duration maxAge) {
+        GoogleIdentity identity = verify(idToken);
+        Instant issuedAt = identity.issuedAt();
+        Duration tokenAge = issuedAt == null ? null : Duration.between(issuedAt, Instant.now());
+        if (tokenAge == null || tokenAge.isNegative() || tokenAge.compareTo(maxAge) > 0) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+                    "Faça uma nova autenticação Google para confirmar esta operação");
+        }
+        return identity;
+    }
+
+    public record GoogleIdentity(String subject, String email, Instant issuedAt) {}
 }

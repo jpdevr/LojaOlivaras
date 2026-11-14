@@ -10,7 +10,7 @@ Requisitos: Docker Desktop com Docker Compose. Copie `.env.example` para `.env` 
 docker compose up --build
 ```
 
-- API: `http://localhost:8080/api/v1`
+- API: `http://localhost:8080/lojaolivaras/api`
 - Health check: `http://localhost:8080/api/v1/health`
 - Swagger (health check inicial): `http://localhost:8080/swagger-ui.html`
 - PostgreSQL: `localhost:5432`
@@ -19,15 +19,42 @@ Parar os serviços: `docker compose down`. Para remover também os dados locais 
 
 ## Estado atual
 
-O backend tem a estrutura inicial e a primeira fatia funcional de autenticação: cadastro de cliente, login com e-mail/senha e login com Google ID token. As demais áreas da loja ainda serão feitas por etapas. O Swagger documenta os endpoints atuais em `http://localhost:8080/swagger-ui.html`.
+O backend tem autenticação e o módulo de perfil/endereço. O Swagger documenta os endpoints em `http://localhost:8080/swagger-ui.html`.
 
 ### Cadastro e login
 
-- `POST /api/v1/auth/register`: recebe `profileName`, `email`, `password`, `phone` e `birthDate` (`AAAA-MM-DD`). A pessoa precisa ter **mais de 16 anos**; quem tem exatamente 16 ainda não pode se cadastrar.
-- `POST /api/v1/auth/login`: recebe `email` e `password`; devolve JWT Bearer e dados públicos da conta.
-- `POST /api/v1/auth/google`: recebe `idToken`. No primeiro acesso, também recebe `profileName`, `phone` e `birthDate`, pois o login básico do Google não fornece esses campos obrigatórios da loja. O Google ID token é verificado no servidor quanto à assinatura, emissor, audiência e e-mail verificado.
+- `POST /lojaolivaras/api/auth/register`: recebe `profileName`, `email`, `password`, `phone` e `birthDate` (`AAAA-MM-DD`). A pessoa precisa ter **mais de 16 anos**; quem tem exatamente 16 ainda não pode se cadastrar.
+- `POST /lojaolivaras/api/auth/login`: recebe `email` e `password`; devolve JWT Bearer e dados públicos da conta.
+- `POST /lojaolivaras/api/auth/google`: recebe `idToken`. No primeiro acesso, também recebe `profileName`, `phone` e `birthDate`, pois o login básico do Google não fornece esses campos obrigatórios da loja. O Google ID token é verificado no servidor quanto à assinatura, emissor, audiência e e-mail verificado.
 
 Senha local é armazenada com BCrypt. Cadastro público sempre cria `CUSTOMER`; o papel não é aceito no corpo da requisição. Conta Google não recebe senha local e usa a identidade Google vinculada.
+
+### Perfil e endereços
+
+Todas as rotas abaixo exigem `Authorization: Bearer <token>` obtido no login. O servidor identifica a conta pelo `sub` do JWT; nunca envie ou aceite um `userId` do cliente para escolher o perfil.
+
+| Método | Rota | Uso |
+| --- | --- | --- |
+| `GET` | `/lojaolivaras/api/profile` | Consulta o próprio perfil (rota adicional para visualização). |
+| `POST` | `/lojaolivaras/api/profile/edit` | Atualiza `profileName` e/ou `phone`. E-mail e data de nascimento não são editáveis aqui. |
+| `POST` | `/lojaolivaras/api/profile/change-password` | Altera a senha local; exige senha atual e nova senha (10 a 72 caracteres). |
+| `POST` | `/lojaolivaras/api/profile/deleteaccount` | Encerra a conta após reautenticação: senha atual ou ID token Google recente. |
+| `GET` | `/lojaolivaras/api/profile/address` | Lista os próprios endereços. |
+| `POST` | `/lojaolivaras/api/profile/address/add` | Cadastra endereço; o primeiro vira padrão automaticamente. |
+| `POST` | `/lojaolivaras/api/profile/address/edit/{id}` | Substitui um endereço da própria conta. |
+| `POST` | `/lojaolivaras/api/profile/address/delete/{id}` | Remove endereço próprio; se era padrão, promove outro. |
+
+Exemplos de corpos:
+
+```json
+{"profileName":"Luna","phone":"+5511999999999"}
+```
+
+```json
+{"currentPassword":"senha-atual","newPassword":"uma-senha-nova-segura"}
+```
+
+As respostas não incluem senha, hash, identidade Google ou token. Senhas locais são armazenadas como hash BCrypt. Alterar a senha invalida todos os JWTs já emitidos. Excluir conta exige reautenticação, apaga os endereços e anonimiza os dados pessoais básicos; o registro inativo permanece para integridade futura. Conta Google não tem senha local para alterar. A edição de e-mail e a recuperação de acesso ficam para uma etapa com verificação de e-mail.
 
 ## Dependências externas futuras
 

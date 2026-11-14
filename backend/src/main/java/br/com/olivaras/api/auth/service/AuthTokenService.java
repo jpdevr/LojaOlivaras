@@ -34,6 +34,7 @@ public class AuthTokenService {
                 .expiresAt(expiresAt)
                 .claim("role", user.getRole().name())
                 .claim("profileName", user.getProfileName())
+                .claim("ver", user.getTokenVersion())
                 .build();
         String token = encoder.encode(JwtEncoderParameters.from(
                 JwsHeader.with(MacAlgorithm.HS256).type("JWT").build(), claims)).getTokenValue();

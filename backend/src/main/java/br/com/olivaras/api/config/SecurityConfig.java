@@ -1,6 +1,7 @@
 package br.com.olivaras.api.config;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import br.com.olivaras.api.auth.repository.UserRepository;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -52,7 +53,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain apiSecurity(HttpSecurity http) throws Exception {
+    SecurityFilterChain apiSecurity(HttpSecurity http, UserRepository users) throws Exception {
         JwtGrantedAuthoritiesConverter roles = new JwtGrantedAuthoritiesConverter();
         roles.setAuthoritiesClaimName("role");
         roles.setAuthorityPrefix("ROLE_");
@@ -66,12 +67,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/health", "/actuator/health", "/actuator/info",
                                 "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
-                                "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/google")
+                                "/lojaolivaras/api/auth/register", "/lojaolivaras/api/auth/login",
+                                "/lojaolivaras/api/auth/google")
                         .permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/me/**").hasRole("CUSTOMER")
+                        .requestMatchers("/lojaolivaras/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/lojaolivaras/api/profile", "/lojaolivaras/api/profile/**")
+                        .hasRole("CUSTOMER")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(config -> config.jwtAuthenticationConverter(jwt)))
+                .addFilterAfter(new ActiveAccountFilter(users),
+                        org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class)
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())
                 .build();

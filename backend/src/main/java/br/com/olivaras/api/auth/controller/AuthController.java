@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/lojaolivaras/api/auth")
 @Tag(name = "Autenticação", description = "Cadastro e login por senha ou Google")
 public class AuthController {
     private final AuthService authService;

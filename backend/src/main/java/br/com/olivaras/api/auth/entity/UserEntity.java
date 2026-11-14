@@ -32,10 +32,10 @@ public class UserEntity {
     @Column(name = "google_subject", length = 255, unique = true)
     private String googleSubject;
 
-    @Column(nullable = false, length = 30)
+    @Column(length = 30)
     private String phone;
 
-    @Column(name = "birth_date", nullable = false)
+    @Column(name = "birth_date")
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
@@ -50,6 +50,12 @@ public class UserEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "token_version", nullable = false)
+    private int tokenVersion;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     protected UserEntity() {}
 
@@ -75,6 +81,28 @@ public class UserEntity {
     @PreUpdate
     void beforeUpdate() { updatedAt = Instant.now(); }
 
+    public void updateProfile(String profileName, String phone) {
+        if (profileName != null) this.profileName = profileName;
+        if (phone != null) this.phone = phone;
+    }
+
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+        this.tokenVersion++;
+    }
+
+    public void anonymizeAndDeactivate(Instant deletedAt) {
+        this.profileName = "Conta excluída";
+        this.email = "deleted+" + id + "@deleted.invalid";
+        this.passwordHash = null;
+        this.googleSubject = null;
+        this.phone = null;
+        this.birthDate = null;
+        this.active = false;
+        this.deletedAt = deletedAt;
+        this.tokenVersion++;
+    }
+
     public UUID getId() { return id; }
     public String getProfileName() { return profileName; }
     public String getEmail() { return email; }
@@ -85,4 +113,6 @@ public class UserEntity {
     public Role getRole() { return role; }
     public boolean isActive() { return active; }
     public Instant getCreatedAt() { return createdAt; }
+    public int getTokenVersion() { return tokenVersion; }
+    public Instant getDeletedAt() { return deletedAt; }
 }
