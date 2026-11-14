@@ -1,0 +1,46 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: olivaras-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/olivaras}
+    username: ${SPRING_DATASOURCE_USERNAME:olivaras}
+    password: ${SPRING_DATASOURCE_PASSWORD:olivaras_local}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  security:
+    jwt-secret: ${JWT_SECRET:local-development-key-change-before-use-123456789}
+    jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:30}
+  auth:
+    google:
+      enabled: ${GOOGLE_AUTH_ENABLED:false}
+      client-id: ${GOOGLE_CLIENT_ID:}
+  currency:
+    brl-per-galleon: ${EXCHANGE_BRL_PER_GALLEON:5.00}
+  zipcode:
+    provider: ${ZIP_CODE_PROVIDER:viacep}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
