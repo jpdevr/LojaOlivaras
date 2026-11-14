@@ -68,7 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/health", "/actuator/health", "/actuator/info",
                                 "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
                                 "/lojaolivaras/api/auth/register", "/lojaolivaras/api/auth/login",
-                                "/lojaolivaras/api/auth/google")
+                                "/lojaolivaras/api/auth/google", "/lojaolivaras/api/catalogo/**")
                         .permitAll()
                         .requestMatchers("/lojaolivaras/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/lojaolivaras/api/profile", "/lojaolivaras/api/profile/**")

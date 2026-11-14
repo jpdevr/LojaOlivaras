@@ -44,6 +44,18 @@ Todas as rotas abaixo exigem `Authorization: Bearer <token>` obtido no login. O 
 | `POST` | `/lojaolivaras/api/profile/address/edit/{id}` | Substitui um endereço da própria conta. |
 | `POST` | `/lojaolivaras/api/profile/address/delete/{id}` | Remove endereço próprio; se era padrão, promove outro. |
 
+### Catálogo
+
+As consultas do catálogo são públicas. Os itens são páginas ordenadas pelo nome; `page` começa em zero e `size` aceita de 1 a 100. A resposta exibe disponibilidade, não a quantidade exata em estoque.
+
+| Método | Rota | Uso |
+| --- | --- | --- |
+| `GET` | `/lojaolivaras/api/catalogo/list-item` | Lista itens ativos. Parâmetros opcionais: `page`, `size`. |
+| `GET` | `/lojaolivaras/api/catalogo/search` | Busca por `q`, `wood` e/ou `core`; também aceita `page` e `size`. |
+| `GET` | `/lojaolivaras/api/catalogo/item-detail/{id}` | Detalha item pelo UUID. |
+
+O seed inicial contém 20 varinhas com informações documentadas, incluindo uma baseada em detalhes de produção de filme. Características sem confirmação ficam vazias, preços e estoques são fictícios para a atividade e as imagens ficam sem URL até haver material autorizado. Cada item guarda a referência e a categoria da fonte.
+
 Exemplos de corpos:
 
 ```json
