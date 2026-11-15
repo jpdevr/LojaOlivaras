@@ -50,7 +50,9 @@ public class CatalogService {
     }
 
     private String normalize(String value) {
-        if (value == null || value.isBlank()) return null;
+        // Sempre envia texto não nulo ao PostgreSQL. Parâmetros nulos usados
+        // em expressões `:param is null` podem ser inferidos como bytea pelo driver.
+        if (value == null || value.isBlank()) return "";
         return value.trim().toLowerCase(Locale.ROOT);
     }
 }

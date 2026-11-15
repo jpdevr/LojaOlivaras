@@ -23,11 +23,11 @@ public interface WandProductRepository extends JpaRepository<WandProductEntity, 
     @Query("""
             select p from WandProductEntity p
             where p.active = true
-              and (:term is null or lower(p.name) like lower(concat('%', :term, '%'))
+              and (:term = '' or lower(p.name) like lower(concat('%', :term, '%'))
                    or lower(coalesce(p.ownerName, '')) like lower(concat('%', :term, '%'))
                    or lower(coalesce(p.description, '')) like lower(concat('%', :term, '%')))
-              and (:wood is null or lower(coalesce(p.wood, '')) like lower(concat('%', :wood, '%')))
-              and (:core is null or lower(coalesce(p.core, '')) like lower(concat('%', :core, '%')))
+              and (:wood = '' or lower(coalesce(p.wood, '')) like lower(concat('%', :wood, '%')))
+              and (:core = '' or lower(coalesce(p.core, '')) like lower(concat('%', :core, '%')))
             """)
     Page<WandProductEntity> search(@Param("term") String term,
                                    @Param("wood") String wood,
