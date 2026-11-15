@@ -11,7 +11,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +37,7 @@ public class CheckoutController {
 
     @PostMapping("/confirm")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Confirma o pedido com pagamento simulado")
+    @Operation(summary = "Confirma o pedido e inicia a janela de pagamento simulado")
     public OrderResponse confirm(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CheckoutRequest request) {
         return checkout.confirm(userId(jwt), request);
     }
@@ -54,6 +58,18 @@ public class CheckoutController {
     @Operation(summary = "Consulta o estado do pagamento simulado de um pedido próprio")
     public PaymentStatusResponse paymentStatus(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID orderId) {
         return checkout.paymentStatus(userId(jwt), orderId);
+    }
+
+    @GetMapping(value = "/order/{id}/boleto", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Baixa o boleto ficticio em PDF de um pedido proprio")
+    public ResponseEntity<byte[]> boleto(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        byte[] pdf = checkout.boletoPdf(userId(jwt), id);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.attachment()
+                .filename("boleto-simulado-" + id + ".pdf").build());
+        headers.setCacheControl("no-store");
+        return ResponseEntity.ok().headers(headers).body(pdf);
     }
 
     private UUID userId(Jwt jwt) { return UUID.fromString(jwt.getSubject()); }

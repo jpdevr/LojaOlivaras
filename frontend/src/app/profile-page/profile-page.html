@@ -168,21 +168,36 @@
 
   <section id="orders" aria-labelledby="orders-title">
     <h2 id="orders-title">Meus pedidos</h2>
-    <p>O histórico de pedidos será conectado nesta etapa futura. Ainda não há pedidos carregados.</p>
-    <table>
-      <thead>
-        <tr>
-          <th scope="col">Pedido</th>
-          <th scope="col">Data</th>
-          <th scope="col">Total</th>
-          <th scope="col">Status do pedido</th>
-          <th scope="col">Status do pagamento</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="5">Nenhum pedido para exibir.</td></tr>
-      </tbody>
-    </table>
-    <p>Status já previstos pela API: <code>CONFIRMED</code> e <code>SIMULATED_APPROVED</code>.</p>
+    @if (ordersError()) { <p role="alert">{{ ordersError() }}</p> }
+    @if (loadingOrders()) {
+      <p role="status">Carregando pedidos...</p>
+    } @else if (orders().length > 0) {
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Pedido</th>
+            <th scope="col">Data</th>
+            <th scope="col">Total</th>
+            <th scope="col">Pagamento</th>
+            <th scope="col">Status do pedido</th>
+            <th scope="col">Status do pagamento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of orders(); track order.id) {
+            <tr>
+              <td><a [routerLink]="['/orders', order.id]">{{ order.id }}</a></td>
+              <td>{{ order.createdAt | date:'short' }}</td>
+              <td>{{ order.totalGalleons }} galeões</td>
+              <td>{{ paymentMethodName(order.paymentMethod) }}</td>
+              <td>{{ orderStatusName(order.status) }}</td>
+              <td>{{ paymentStatusName(order.paymentStatus) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <p>Nenhum pedido ainda.</p>
+    }
   </section>
 </main>

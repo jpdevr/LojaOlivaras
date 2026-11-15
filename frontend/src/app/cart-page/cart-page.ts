@@ -1,12 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { CartItem, CartResponse, CartService } from '../core/cart.service';
 import { StoreNavigation } from '../shared/store-navigation';
 
 @Component({
   selector: 'app-cart-page',
-  imports: [StoreNavigation],
+  imports: [RouterLink, StoreNavigation],
   templateUrl: './cart-page.html',
 })
 export class CartPage {

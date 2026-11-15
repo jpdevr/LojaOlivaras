@@ -16,10 +16,12 @@ import br.com.olivaras.api.order.dto.OrderItemResponse;
 import br.com.olivaras.api.order.dto.OrderResponse;
 import br.com.olivaras.api.order.dto.PaymentStatusResponse;
 import br.com.olivaras.api.order.entity.OrderItemEntity;
+import br.com.olivaras.api.order.entity.PaymentMethod;
 import br.com.olivaras.api.order.entity.StoreOrderEntity;
 import br.com.olivaras.api.order.repository.OrderItemRepository;
 import br.com.olivaras.api.order.repository.StoreOrderRepository;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -42,10 +44,15 @@ public class CheckoutService {
     private final WandProductRepository products;
     private final StoreOrderRepository orders;
     private final OrderItemRepository orderItems;
+    private final OrderLifecycleService lifecycle;
+    private final PaymentQrCodeService qrCodes;
+    private final BoletoPdfService boletoPdf;
 
     public CheckoutService(UserRepository users, AddressRepository addresses, ShoppingCartRepository carts,
                            CartItemRepository cartItems, WandProductRepository products,
-                           StoreOrderRepository orders, OrderItemRepository orderItems) {
+                           StoreOrderRepository orders, OrderItemRepository orderItems,
+                           OrderLifecycleService lifecycle, PaymentQrCodeService qrCodes,
+                           BoletoPdfService boletoPdf) {
         this.users = users;
         this.addresses = addresses;
         this.carts = carts;
@@ -53,6 +60,9 @@ public class CheckoutService {
         this.products = products;
         this.orders = orders;
         this.orderItems = orderItems;
+        this.lifecycle = lifecycle;
+        this.qrCodes = qrCodes;
+        this.boletoPdf = boletoPdf;
     }
 
     @Transactional(readOnly = true)
@@ -91,8 +101,13 @@ public class CheckoutService {
             total = total.add(product.getPriceGalleons().multiply(BigDecimal.valueOf(line.getQuantity())));
         }
 
-        StoreOrderEntity order = orders.saveAndFlush(
-                new StoreOrderEntity(user, address, total, "SIM-" + UUID.randomUUID()));
+        Instant now = Instant.now();
+        Instant paymentExpiresAt = now.plus(request.paymentMethod().simulationDelay());
+        String paymentReference = "SIM-" + UUID.randomUUID();
+        String paymentInstructions = paymentInstructions(request.paymentMethod(), paymentReference, total,
+                paymentExpiresAt);
+        StoreOrderEntity order = orders.saveAndFlush(new StoreOrderEntity(user, address, total,
+                paymentReference, request.paymentMethod().name(), paymentInstructions, paymentExpiresAt));
         for (CartItemEntity line : lines) {
             WandProductEntity product = productById.get(line.getProduct().getId());
             product.decreaseStock(line.getQuantity());
@@ -106,28 +121,60 @@ public class CheckoutService {
         return response(order);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public OrderResponse order(UUID userId, UUID orderId) {
         requireActiveUser(userId);
+        lifecycle.advanceDueOrders();
         StoreOrderEntity order = ownedOrder(userId, orderId);
         return response(order);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PaymentStatusResponse paymentStatus(UUID userId, UUID orderId) {
         requireActiveUser(userId);
-        return PaymentStatusResponse.from(ownedOrder(userId, orderId));
+        lifecycle.advanceDueOrders();
+        StoreOrderEntity order = ownedOrder(userId, orderId);
+        String qrCode = "PIX".equals(order.getPaymentMethod())
+                && "PENDING".equals(order.getPaymentStatus())
+                ? qrCodes.toDataUri(order.getPaymentInstructions())
+                : null;
+        return PaymentStatusResponse.from(order, qrCode, Instant.now());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<OrderResponse> orderHistory(UUID userId, int page, int size) {
         requireActiveUser(userId);
+        lifecycle.advanceDueOrders();
         if (page < 0 || size < 1 || size > 50) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Use page >= 0 e size entre 1 e 50");
         }
         return orders.findAllByCustomer_IdOrderByCreatedAtDesc(userId,
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")))
                 .map(this::response);
+    }
+
+    @Transactional
+    public byte[] boletoPdf(UUID userId, UUID orderId) {
+        requireActiveUser(userId);
+        lifecycle.advanceDueOrders();
+        StoreOrderEntity order = ownedOrder(userId, orderId);
+        if (!"BOLETO".equals(order.getPaymentMethod())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Este pedido nao utiliza boleto simulado");
+        }
+        List<OrderItemResponse> items = orderItems.findAllByOrder_IdOrderByProductNameAsc(orderId).stream()
+                .map(OrderItemResponse::from).toList();
+        return boletoPdf.create(order, items);
+    }
+
+    private String paymentInstructions(PaymentMethod method, String reference, BigDecimal total,
+                                       Instant paymentExpiresAt) {
+        return switch (method) {
+            case PIX -> "OLIVARAS-PIX-SIMULADO|" + reference + "|" + total.toPlainString()
+                    + "|" + paymentExpiresAt;
+            case BOLETO -> "OLIVARAS-BOLETO-SIMULADO|" + reference;
+            case CREDIT_CARD -> "OLIVARAS-CARTAO-SIMULADO|" + reference;
+        };
     }
 
     private OrderResponse response(StoreOrderEntity order) {

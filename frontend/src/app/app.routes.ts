@@ -47,5 +47,15 @@ export const routes: Routes = [
     canActivate: [requireLogin, requireCustomer],
     loadComponent: () => import('./cart-page/cart-page').then((module) => module.CartPage),
   },
+  {
+    path: 'checkout',
+    canActivate: [requireLogin, requireCustomer],
+    loadComponent: () => import('./checkout-page/checkout-page').then((module) => module.CheckoutPage),
+  },
+  {
+    path: 'orders/:id',
+    canActivate: [requireLogin, requireCustomer],
+    loadComponent: () => import('./order-page/order-page').then((module) => module.OrderPage),
+  },
   { path: '**', redirectTo: 'login' },
 ];

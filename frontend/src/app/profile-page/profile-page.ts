@@ -1,8 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { DatePipe } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { CheckoutService, OrderResponse } from '../core/checkout.service';
 import { Address, AddressRequest, ProfileService } from '../core/profile.service';
 import { AuthService } from '../core/auth.service';
 import { CepLookupService } from '../core/cep-lookup.service';
@@ -17,11 +19,12 @@ function emptyAddress(): AddressRequest {
 
 @Component({
   selector: 'app-profile-page',
-  imports: [FormsModule, RouterLink, StoreNavigation],
+  imports: [DatePipe, FormsModule, RouterLink, StoreNavigation],
   templateUrl: './profile-page.html',
 })
 export class ProfilePage {
   private readonly profile = inject(ProfileService);
+  private readonly checkout = inject(CheckoutService);
   private readonly auth = inject(AuthService);
   private readonly cepLookup = inject(CepLookupService);
   private readonly destroyRef = inject(DestroyRef);
@@ -40,6 +43,9 @@ export class ProfilePage {
   readonly addresses = signal<Address[]>([]);
   readonly editingAddressId = signal<string | null>(null);
   readonly pendingAddressDeletes = signal<ReadonlySet<string>>(new Set());
+  readonly orders = signal<OrderResponse[]>([]);
+  readonly loadingOrders = signal(true);
+  readonly ordersError = signal<string | null>(null);
 
   profileForm = { profileName: '', phone: '' };
   passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -48,6 +54,7 @@ export class ProfilePage {
   constructor() {
     this.loadProfile();
     this.loadAddresses();
+    this.loadOrders();
   }
 
   loadProfile(): void {
@@ -127,6 +134,33 @@ export class ProfilePage {
         this.loadingAddresses.set(false);
       },
     });
+  }
+
+  loadOrders(): void {
+    this.loadingOrders.set(true);
+    this.ordersError.set(null);
+    this.checkout.listOrders().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (page) => {
+        this.orders.set(page.content);
+        this.loadingOrders.set(false);
+      },
+      error: (error: unknown) => {
+        this.ordersError.set(this.errorText(error, 'Não foi possível carregar o histórico de pedidos.'));
+        this.loadingOrders.set(false);
+      },
+    });
+  }
+
+  orderStatusName(status: string): string {
+    return ({ CONFIRMED: 'Confirmado', PROCESSING: 'Em preparação', DELIVERED: 'Entregue' })[status] ?? status;
+  }
+
+  paymentStatusName(status: string): string {
+    return ({ PENDING: 'Aguardando simulação', SIMULATED_APPROVED: 'Aprovado (simulação)' })[status] ?? status;
+  }
+
+  paymentMethodName(method: string): string {
+    return ({ PIX: 'PIX', BOLETO: 'Boleto', CREDIT_CARD: 'Cartão', LEGACY: 'Pedido antigo' })[method] ?? method;
   }
 
   editAddress(address: Address): void {

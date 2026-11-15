@@ -97,16 +97,19 @@ As rotas exigem JWT Bearer de uma conta `CUSTOMER`. Cada conta possui um carrinh
 
 ### Checkout e pedidos
 
-O checkout exige um endereço cadastrado na própria conta e um carrinho não vazio. A confirmação grava preço, características do produto e endereço como fotografia do momento do pedido, desconta o estoque atomicamente e esvazia o carrinho. O pagamento recebe o estado `SIMULATED_APPROVED`; nenhuma cobrança ou integração financeira ocorre.
+O checkout exige um endereço cadastrado na própria conta e um carrinho não vazio. A confirmação grava preço, características do produto e endereço como fotografia do momento do pedido, reserva o estoque atomicamente e esvazia o carrinho. O pedido começa como `CONFIRMED` e o pagamento como `PENDING`. A simulação aprova automaticamente o pagamento após o prazo do método; o pedido passa a `PROCESSING` e é marcado `DELIVERED` um dia depois. Um agendador no backend aplica essas mudanças mesmo se o cliente sair da página.
 
 | Método | Rota | Uso |
 | --- | --- | --- |
-| `POST` | `/lojaolivaras/api/checkout/confirm` | Cria o pedido e aprova o pagamento fictício. Corpo: `{"addressId":"<UUID do endereço>"}`. |
+| `POST` | `/lojaolivaras/api/checkout/confirm` | Confirma o pedido e inicia o pagamento simulado. Corpo: `{"addressId":"<UUID do endereço>","paymentMethod":"PIX"}`. Métodos: `PIX` (5 min), `BOLETO` (15 min) e `CREDIT_CARD` (2 min). |
 | `GET` | `/lojaolivaras/api/checkout/addresses` | Lista endereços próprios para entrega. |
 | `GET` | `/lojaolivaras/api/checkout/order/{id}` | Consulta um pedido próprio. |
-| `GET` | `/lojaolivaras/api/checkout/payment-status/{orderId}` | Consulta estado e referência do pagamento simulado de um pedido próprio. |
+| `GET` | `/lojaolivaras/api/checkout/payment-status/{orderId}` | Consulta estado, prazo restante e instruções simuladas; para PIX também retorna QR code PNG em data URI. |
+| `GET` | `/lojaolivaras/api/checkout/order/{id}/boleto` | Baixa PDF fictício com os dados do pedido, apenas para pedidos com método boleto. |
+| `GET` | `/lojaolivaras/api/profile/orders/` | Lista o histórico e os status atuais dos pedidos próprios. |
+| `GET` | `/lojaolivaras/api/profile/orders/{id}` | Consulta um pedido próprio pelo histórico. |
 
-O detalhe do pedido também pode ser consultado pela rota de checkout acima.
+O QR code contém um identificador de demonstração e não inicia uma transferência PIX real. O boleto PDF também é fictício e não pode ser pago em banco. O checkout não pede nem armazena dados de cartão. `SIMULATED_APPROVED` significa apenas que o prazo da simulação terminou; nenhuma cobrança real foi feita.
 
 Após exclusão da conta, o carrinho é removido e dados de endereço copiados para pedidos são anonimizados.
 

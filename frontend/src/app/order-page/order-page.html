@@ -1,0 +1,72 @@
+<app-store-navigation />
+
+<main>
+  <h1>Acompanhar pedido</h1>
+  @if (errorMessage()) {
+    <p role="alert">{{ errorMessage() }}</p>
+  } @else if (loading()) {
+    <p role="status">Carregando pedido...</p>
+  } @else if (order(); as currentOrder) {
+    <p>Número do pedido: {{ currentOrder.id }}</p>
+    <p>Status: {{ orderStatusName(currentOrder.status) }}</p>
+    <p>Pagamento: {{ paymentStatusName(currentOrder.paymentStatus) }}</p>
+    <p>Forma de pagamento: {{ paymentMethodName(currentOrder.paymentMethod) }}</p>
+    <p>Total: {{ currentOrder.totalGalleons }} galeões</p>
+    <p>Referência: {{ currentOrder.paymentReference }}</p>
+
+    @if (statusError()) { <p role="alert">{{ statusError() }}</p> }
+
+    @if (currentOrder.paymentStatus === 'PENDING') {
+      <section aria-labelledby="pending-payment-title">
+        <h2 id="pending-payment-title">Pagamento simulado em andamento</h2>
+        <p>O pedido está confirmado. A simulação concluirá o pagamento quando o prazo terminar.</p>
+        <p>Tempo restante: <strong>{{ formatRemaining(secondsRemaining()) }}</strong></p>
+        @if (currentOrder.paymentExpiresAt) {
+          <p>Prazo: {{ currentOrder.paymentExpiresAt | date:'short' }}</p>
+        }
+
+        @if (currentOrder.paymentMethod === 'PIX' && payment()?.qrCodeDataUri) {
+          <h3>QR code de demonstração</h3>
+          <img [src]="payment()?.qrCodeDataUri ?? ''" alt="QR code com dados do pagamento simulado" width="300" height="300">
+          <p>Este QR contém apenas um código fictício da loja. A leitura não inicia uma transferência PIX real.</p>
+          <p>Código: <code>{{ currentOrder.paymentInstructions }}</code></p>
+        } @else if (currentOrder.paymentMethod === 'BOLETO') {
+          <h3>Boleto simulado</h3>
+          <p>Baixe o PDF com os dados do pedido. Ele é fictício e não pode ser pago em banco.</p>
+          <p>Código: <code>{{ currentOrder.paymentInstructions }}</code></p>
+          <button type="button" (click)="downloadBoleto()">Baixar boleto em PDF</button>
+        } @else if (currentOrder.paymentMethod === 'CREDIT_CARD') {
+          <p>O cartão é somente uma simulação. Não informe dados de um cartão real.</p>
+          <p>{{ currentOrder.paymentInstructions }}</p>
+        }
+      </section>
+    } @else if (currentOrder.status === 'PROCESSING') {
+      <section aria-labelledby="processing-title">
+        <h2 id="processing-title">Pagamento concluído na simulação</h2>
+        @if (currentOrder.paidAt) { <p>Pagamento simulado em {{ currentOrder.paidAt | date:'short' }}.</p> }
+        @if (currentOrder.estimatedDeliveryAt) {
+          <p>Entrega prevista para {{ currentOrder.estimatedDeliveryAt | date:'short' }}.</p>
+        }
+      </section>
+    } @else if (currentOrder.status === 'DELIVERED') {
+      <section aria-labelledby="delivered-title">
+        <h2 id="delivered-title">Pedido entregue</h2>
+        @if (currentOrder.deliveredAt) { <p>Entrega simulada em {{ currentOrder.deliveredAt | date:'short' }}.</p> }
+      </section>
+    }
+
+    <section aria-labelledby="order-items-title">
+      <h2 id="order-items-title">Itens do pedido</h2>
+      <ul>
+        @for (item of currentOrder.items; track $index) {
+          <li>{{ item.name }} — {{ item.quantity }} × {{ item.unitPriceGalleons }} =
+            {{ item.lineTotalGalleons }} galeões</li>
+        }
+      </ul>
+    </section>
+
+    <p>{{ payment()?.note }}</p>
+    <p><a routerLink="/catalogo">Voltar ao catálogo</a></p>
+    <p><a routerLink="/profile" fragment="orders">Ver histórico de pedidos</a></p>
+  }
+</main>

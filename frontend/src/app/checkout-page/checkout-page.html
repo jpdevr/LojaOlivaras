@@ -1,0 +1,61 @@
+<app-store-navigation />
+
+<main>
+  <h1>Finalizar pedido</h1>
+  @if (errorMessage()) { <p role="alert">{{ errorMessage() }}</p> }
+  @if (loading() || loadingCart()) {
+    <p role="status">Carregando dados do pedido...</p>
+  } @else {
+    @if (!cart()?.items?.length) {
+      <p>O carrinho está vazio. <a routerLink="/catalogo">Voltar ao catálogo</a></p>
+    } @else {
+      <section aria-labelledby="checkout-address-title">
+        <h2 id="checkout-address-title">Endereço de entrega</h2>
+        @if (addresses().length === 0) {
+          <p>Cadastre um endereço antes de continuar. <a routerLink="/profile">Gerenciar endereços</a></p>
+        } @else {
+          <label for="checkout-address">Escolha um endereço</label>
+          <select id="checkout-address" name="addressId" [(ngModel)]="selectedAddressId">
+            @for (address of addresses(); track address.id) {
+              <option [value]="address.id">
+                {{ address.recipient }} — {{ address.street }}, {{ address.number }} —
+                {{ address.city }}/{{ address.state }}{{ address.defaultAddress ? ' (padrão)' : '' }}
+              </option>
+            }
+          </select>
+        }
+      </section>
+
+      <section aria-labelledby="checkout-payment-title">
+        <h2 id="checkout-payment-title">Forma de pagamento simulada</h2>
+        <p>Nenhum dado bancário ou de cartão real será solicitado.</p>
+        <p>
+          <input id="payment-pix" type="radio" name="paymentMethod" value="PIX" [(ngModel)]="paymentMethod">
+          <label for="payment-pix">PIX — QR code válido para a simulação por até 5 minutos</label>
+        </p>
+        <p>
+          <input id="payment-boleto" type="radio" name="paymentMethod" value="BOLETO" [(ngModel)]="paymentMethod">
+          <label for="payment-boleto">Boleto — PDF fictício, com conclusão simulada após 15 minutos</label>
+        </p>
+        <p>
+          <input id="payment-card" type="radio" name="paymentMethod" value="CREDIT_CARD" [(ngModel)]="paymentMethod">
+          <label for="payment-card">Cartão de crédito — conclusão simulada após 2 minutos</label>
+        </p>
+      </section>
+
+      <section aria-labelledby="checkout-summary-title">
+        <h2 id="checkout-summary-title">Resumo</h2>
+        @for (item of cart()?.items ?? []; track item.itemId) {
+          <p>{{ item.name }} — {{ item.quantity }} × {{ item.unitPriceGalleons }} =
+            {{ item.lineTotalGalleons }} galeões</p>
+        }
+        <p>Total: {{ cart()?.totalGalleons }} galeões</p>
+      </section>
+
+      <button type="button" [disabled]="submitting() || !selectedAddressId || !addresses().length"
+              (click)="confirmOrder()">
+        {{ submitting() ? 'Confirmando pedido...' : 'Confirmar pedido' }}
+      </button>
+    }
+  }
+</main>

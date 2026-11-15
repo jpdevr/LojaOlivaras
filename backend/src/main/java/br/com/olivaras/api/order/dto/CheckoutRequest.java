@@ -1,6 +1,9 @@
 package br.com.olivaras.api.order.dto;
 
+import br.com.olivaras.api.order.entity.PaymentMethod;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
-public record CheckoutRequest(@NotNull UUID addressId) {}
+public record CheckoutRequest(
+        @NotNull UUID addressId,
+        @NotNull PaymentMethod paymentMethod) {}

@@ -38,7 +38,7 @@
       <button type="button" [disabled]="clearing()" (click)="clear()">
         {{ clearing() ? 'Esvaziando...' : 'Esvaziar carrinho' }}
       </button>
-      <p>A finalização do pedido será conectada em uma próxima etapa.</p>
+      <p><a routerLink="/checkout">Continuar para endereço e pagamento</a></p>
     } @else {
       <p>Seu carrinho está vazio.</p>
     }
