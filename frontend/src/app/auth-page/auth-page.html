@@ -1,0 +1,87 @@
+<main>
+  <h1>Loja Olivaras</h1>
+
+  <nav aria-label="Acesso à conta">
+    <button type="button" [attr.aria-pressed]="view() === 'login'" (click)="selectView('login')">
+      Entrar
+    </button>
+    <button type="button" [attr.aria-pressed]="view() === 'register'" (click)="selectView('register')">
+      Criar conta
+    </button>
+  </nav>
+
+  @if (errorMessage()) {
+    <p role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (successMessage()) {
+    <p role="status">{{ successMessage() }}</p>
+  }
+
+  @if (view() === 'login') {
+    <section aria-labelledby="login-title">
+      <h2 id="login-title">Entrar</h2>
+
+      <form (ngSubmit)="submitLogin()" #loginFormElement="ngForm">
+        <p>
+          <label for="login-email">E-mail</label><br>
+          <input id="login-email" name="email" type="email" autocomplete="email"
+                 required [(ngModel)]="loginForm.email">
+        </p>
+
+        <p>
+          <label for="login-password">Senha</label><br>
+          <input id="login-password" name="password" type="password"
+                 autocomplete="current-password" required maxlength="72"
+                 [(ngModel)]="loginForm.password">
+        </p>
+
+        <button type="submit" [disabled]="loading() || loginFormElement.invalid">
+          {{ loading() ? 'Entrando...' : 'Entrar' }}
+        </button>
+      </form>
+    </section>
+  } @else {
+    <section aria-labelledby="register-title">
+      <h2 id="register-title">Criar conta</h2>
+
+      <form (ngSubmit)="submitRegister()" #registerFormElement="ngForm">
+        <p>
+          <label for="profile-name">Nome de perfil</label><br>
+          <input id="profile-name" name="profileName" type="text" autocomplete="nickname"
+                 required minlength="2" maxlength="80" [(ngModel)]="registerForm.profileName">
+        </p>
+
+        <p>
+          <label for="register-email">E-mail</label><br>
+          <input id="register-email" name="email" type="email" autocomplete="email"
+                 required maxlength="254" [(ngModel)]="registerForm.email">
+        </p>
+
+        <p>
+          <label for="register-password">Senha (mínimo de 10 caracteres)</label><br>
+          <input id="register-password" name="password" type="password" autocomplete="new-password"
+                 required minlength="10" maxlength="72" [(ngModel)]="registerForm.password">
+        </p>
+
+        <p>
+          <label for="phone">Telefone</label><br>
+          <input id="phone" name="phone" type="tel" autocomplete="tel" required
+                 pattern="^\+?[0-9 ()-]{10,30}$" [(ngModel)]="registerForm.phone">
+        </p>
+
+        <p>
+          <label for="birth-date">Data de nascimento</label><br>
+          <input id="birth-date" name="birthDate" type="date" autocomplete="bday" required
+                 [max]="latestAllowedBirthDate" [(ngModel)]="registerForm.birthDate">
+        </p>
+
+        <p>É necessário ter mais de 16 anos para criar uma conta.</p>
+
+        <button type="submit" [disabled]="loading() || registerFormElement.invalid">
+          {{ loading() ? 'Criando conta...' : 'Criar conta' }}
+        </button>
+      </form>
+    </section>
+  }
+</main>

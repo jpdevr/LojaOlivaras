@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 
 export interface LoginRequest {
@@ -35,6 +35,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly authUrl = 'http://localhost:8080/lojaolivaras/api/auth';
   private accessToken: string | null = null;
+  private readonly currentUser = signal<UserResponse | null>(null);
 
   login(request: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.authUrl}/login`, request);
@@ -44,11 +45,21 @@ export class AuthService {
     return this.http.post<UserResponse>(`${this.authUrl}/register`, request);
   }
 
-  setAccessToken(token: string): void {
-    this.accessToken = token;
+  setSession(response: LoginResponse): void {
+    this.accessToken = response.accessToken;
+    this.currentUser.set(response.user);
   }
 
   getAccessToken(): string | null {
     return this.accessToken;
+  }
+
+  getCurrentUser(): typeof this.currentUser {
+    return this.currentUser;
+  }
+
+  clearSession(): void {
+    this.accessToken = null;
+    this.currentUser.set(null);
   }
 }
