@@ -2,7 +2,9 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Observable, finalize, map } from 'rxjs';
 import { CatalogItem, CatalogService } from '../core/catalog.service';
+import { WishlistService } from '../core/wishlist.service';
 import { StoreNavigation } from '../shared/store-navigation';
 
 @Component({
@@ -12,6 +14,7 @@ import { StoreNavigation } from '../shared/store-navigation';
 })
 export class CatalogPage {
   private readonly catalog = inject(CatalogService);
+  private readonly wishlist = inject(WishlistService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -21,6 +24,9 @@ export class CatalogPage {
   readonly query = signal('');
   readonly currentPage = signal(0);
   readonly totalPages = signal(0);
+  readonly favoriteIds = this.wishlist.favoriteIds;
+  readonly pendingFavorites = signal<ReadonlySet<string>>(new Set());
+  readonly wishlistMessage = signal<string | null>(null);
 
   minPrice: number | null = null;
   maxPrice: number | null = null;
@@ -46,6 +52,10 @@ export class CatalogPage {
   }
 
   constructor() {
+    this.wishlist.load().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      error: () => this.wishlistMessage.set('Não foi possível carregar seus favoritos.'),
+    });
+
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const query = params.get('q')?.trim() ?? '';
       this.query.set(query);
@@ -89,6 +99,30 @@ export class CatalogPage {
     this.selectedMaker = '';
     this.selectedTier = '';
     this.onlyAvailable = false;
+  }
+
+  toggleFavorite(itemId: string): void {
+    if (this.pendingFavorites().has(itemId)) return;
+    this.pendingFavorites.update((ids) => new Set(ids).add(itemId));
+    this.wishlistMessage.set(null);
+
+    let request: Observable<void>;
+    if (this.favoriteIds().has(itemId)) {
+      request = this.wishlist.remove(itemId).pipe(map(() => undefined));
+    } else {
+      request = this.wishlist.add(itemId).pipe(map(() => undefined));
+    }
+
+    request.pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.pendingFavorites.update((ids) => {
+        const next = new Set(ids);
+        next.delete(itemId);
+        return next;
+      })),
+    ).subscribe({
+      error: () => this.wishlistMessage.set('Não foi possível atualizar a wishlist. Tente novamente.'),
+    });
   }
 
   productRows(): CatalogItem[][] {

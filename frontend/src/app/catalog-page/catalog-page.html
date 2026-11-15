@@ -2,6 +2,9 @@
 
 <main>
   <h1>Catálogo de varinhas</h1>
+  @if (wishlistMessage()) {
+    <p role="status">{{ wishlistMessage() }}</p>
+  }
   @if (query()) {
     <p>Resultados para “{{ query() }}”</p>
   }
@@ -103,6 +106,19 @@
                               }
                               <h2>{{ item.name }}</h2>
                               <p>{{ item.priceGalleons }} galeões</p>
+                              <button
+                                type="button"
+                                [attr.aria-pressed]="favoriteIds().has(item.id)"
+                                [disabled]="pendingFavorites().has(item.id)"
+                                (click)="toggleFavorite(item.id)">
+                                @if (pendingFavorites().has(item.id)) {
+                                  Atualizando...
+                                } @else if (favoriteIds().has(item.id)) {
+                                  Remover dos favoritos
+                                } @else {
+                                  Favoritar
+                                }
+                              </button>
                               <p>{{ item.description }}</p>
                               <ul>
                                 @if (item.ownerName) { <li>Associada a: {{ item.ownerName }}</li> }

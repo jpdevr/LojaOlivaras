@@ -24,5 +24,10 @@ export const routes: Routes = [
     canActivate: [requireLogin],
     loadComponent: () => import('./catalog-page/catalog-page').then((module) => module.CatalogPage),
   },
+  {
+    path: 'wishlist',
+    canActivate: [requireLogin],
+    loadComponent: () => import('./wishlist-page/wishlist-page').then((module) => module.WishlistPage),
+  },
   { path: '**', redirectTo: 'login' },
 ];
