@@ -1,0 +1,146 @@
+<app-store-navigation />
+
+<main>
+  <h1>Catálogo de varinhas</h1>
+  @if (query()) {
+    <p>Resultados para “{{ query() }}”</p>
+  }
+
+  <table role="presentation">
+    <tbody>
+      <tr>
+        <td>
+          <aside aria-labelledby="catalog-filters-title">
+            <h2 id="catalog-filters-title">Filtros</h2>
+
+            <fieldset>
+              <legend>Preço (galeões)</legend>
+              <p>
+                <label for="minimum-price">Mínimo</label><br>
+                <input id="minimum-price" type="number" min="0" step="0.01" [(ngModel)]="minPrice">
+              </p>
+              <p>
+                <label for="maximum-price">Máximo</label><br>
+                <input id="maximum-price" type="number" min="0" step="0.01" [(ngModel)]="maxPrice">
+              </p>
+            </fieldset>
+
+            <p>
+              <label for="wood-filter">Madeira</label><br>
+              <select id="wood-filter" [(ngModel)]="selectedWood">
+                <option value="">Todas</option>
+                @for (wood of woods; track wood) { <option [value]="wood">{{ wood }}</option> }
+              </select>
+            </p>
+
+            <p>
+              <label for="core-filter">Núcleo</label><br>
+              <select id="core-filter" [(ngModel)]="selectedCore">
+                <option value="">Todos</option>
+                @for (core of cores; track core) { <option [value]="core">{{ core }}</option> }
+              </select>
+            </p>
+
+            <p>
+              <label for="flexibility-filter">Flexibilidade</label><br>
+              <select id="flexibility-filter" [(ngModel)]="selectedFlexibility">
+                <option value="">Todas</option>
+                @for (flexibility of flexibilities; track flexibility) {
+                  <option [value]="flexibility">{{ flexibility }}</option>
+                }
+              </select>
+            </p>
+
+            <p>
+              <label for="maker-filter">Fabricante</label><br>
+              <select id="maker-filter" [(ngModel)]="selectedMaker">
+                <option value="">Todos</option>
+                @for (maker of makers; track maker) { <option [value]="maker">{{ maker }}</option> }
+              </select>
+            </p>
+
+            <p>
+              <label for="tier-filter">Origem da informação</label><br>
+              <select id="tier-filter" [(ngModel)]="selectedTier">
+                <option value="">Todas</option>
+                <option value="BOOKS">Livros</option>
+                <option value="OFFICIAL_SUPPLEMENTAL">Material oficial complementar</option>
+                <option value="FILM_PRODUCTION">Produção cinematográfica</option>
+              </select>
+            </p>
+
+            <p>
+              <input id="available-filter" type="checkbox" [(ngModel)]="onlyAvailable">
+              <label for="available-filter">Somente em estoque</label>
+            </p>
+
+            <button type="button" (click)="clearFilters()">Limpar filtros</button>
+          </aside>
+        </td>
+
+        <td>
+          <section aria-label="Produtos do catálogo">
+            @if (loading()) {
+              <p role="status">Carregando varinhas...</p>
+            } @else if (errorMessage()) {
+              <p role="alert">{{ errorMessage() }}</p>
+              <button type="button" (click)="loadPage(currentPage())">Tentar novamente</button>
+            } @else {
+              <p>{{ visibleProducts().length }} varinha(s) nesta página</p>
+
+              @if (visibleProducts().length > 0) {
+                <table>
+                  <tbody>
+                    @for (row of productRows(); track $index) {
+                      <tr>
+                        @for (item of row; track item.id) {
+                          <td>
+                            <article>
+                              @if (item.imageUrl) {
+                                <img [src]="item.imageUrl" [alt]="'Imagem de ' + item.name" width="180">
+                              } @else {
+                                <p>Imagem ainda não cadastrada</p>
+                              }
+                              <h2>{{ item.name }}</h2>
+                              <p>{{ item.priceGalleons }} galeões</p>
+                              <p>{{ item.description }}</p>
+                              <ul>
+                                @if (item.ownerName) { <li>Associada a: {{ item.ownerName }}</li> }
+                                @if (item.wood) { <li>Madeira: {{ item.wood }}</li> }
+                                @if (item.core) { <li>Núcleo: {{ item.core }}</li> }
+                                @if (item.lengthInches) { <li>Comprimento: {{ item.lengthInches }} polegadas</li> }
+                                @if (item.flexibility) { <li>Flexibilidade: {{ item.flexibility }}</li> }
+                                @if (item.maker) { <li>Fabricante: {{ item.maker }}</li> }
+                                <li>Informação baseada em: {{ tierName(item.canonTier) }}</li>
+                              </ul>
+                              <p>{{ item.available ? 'Em estoque' : 'Indisponível' }}</p>
+                              <a [href]="item.sourceReference" target="_blank" rel="noopener noreferrer">
+                                Consultar referência
+                              </a>
+                            </article>
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <p>Nenhuma varinha corresponde aos filtros selecionados.</p>
+              }
+
+              @if (totalPages() > 1) {
+                <nav aria-label="Paginação do catálogo">
+                  <button type="button" [disabled]="currentPage() === 0"
+                          (click)="loadPage(currentPage() - 1)">Anterior</button>
+                  <span>Página {{ currentPage() + 1 }} de {{ totalPages() }}</span>
+                  <button type="button" [disabled]="currentPage() + 1 >= totalPages()"
+                          (click)="loadPage(currentPage() + 1)">Próxima</button>
+                </nav>
+              }
+            }
+          </section>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</main>

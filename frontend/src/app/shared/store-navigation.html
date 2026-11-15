@@ -1,0 +1,43 @@
+<header>
+  <nav aria-label="Navegação principal">
+    <a routerLink="/home" aria-label="Página inicial da Loja Olivaras">Loja Olivaras</a>
+
+    <form role="search" (submit)="$event.preventDefault(); submitSearch()">
+      <label for="product-search">Buscar varinhas</label>
+      <input
+        id="product-search"
+        name="q"
+        type="search"
+        autocomplete="off"
+        placeholder="Digite o nome de uma varinha ou personagem"
+        [value]="query()"
+        (input)="updateQuery($event)"
+        aria-controls="product-suggestions">
+      <button type="submit">Pesquisar</button>
+
+      @if (suggestions().length > 0) {
+        <ul id="product-suggestions" aria-label="Sugestões de varinhas">
+          @for (item of suggestions(); track item.id) {
+            <li>
+              <button type="button" (click)="searchForSuggestion(item)">
+                {{ item.name }} — {{ item.priceGalleons }} galeões
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </form>
+
+    <a routerLink="/catalogo">Catálogo</a>
+
+    <details>
+      <summary>Perfil{{ user() ? ' — ' + user()!.profileName : '' }}</summary>
+      <ul>
+        <li><button type="button">Wishlist</button></li>
+        <li><button type="button">Carrinho</button></li>
+      </ul>
+    </details>
+
+    <button type="button" (click)="logout()">Sair</button>
+  </nav>
+</header>

@@ -1,35 +1,7 @@
-<header>
-  <nav aria-label="Navegação principal">
-    <a routerLink="/home" aria-label="Página inicial da Loja Olivaras">Loja Olivaras</a>
-
-    <form role="search" (submit)="$event.preventDefault()">
-      <label for="product-search">Buscar varinhas</label>
-      <input
-        id="product-search"
-        name="q"
-        type="search"
-        list="product-suggestions"
-        placeholder="Digite o nome de uma varinha ou personagem">
-      <datalist id="product-suggestions"></datalist>
-      <button type="submit">Pesquisar</button>
-    </form>
-
-    <button type="button">Catálogo</button>
-
-    <details>
-      <summary>Perfil</summary>
-      <ul>
-        <li><button type="button">Wishlist</button></li>
-        <li><button type="button">Carrinho</button></li>
-      </ul>
-    </details>
-
-    <button type="button" (click)="logout()">Sair</button>
-  </nav>
-</header>
+<app-store-navigation />
 
 <main>
   <h1>Bem-vindo à Loja Olivaras</h1>
   <p>Olá, {{ user()?.profileName }}. Encontre a varinha que escolheu você.</p>
-  <p>As sugestões da busca e o catálogo serão conectados nas próximas etapas.</p>
+  <p>Explore o catálogo ou pesquise pelo nome de uma varinha ou personagem.</p>
 </main>

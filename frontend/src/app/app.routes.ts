@@ -19,5 +19,10 @@ export const routes: Routes = [
     canActivate: [requireLogin],
     loadComponent: () => import('./home-page/home-page').then((module) => module.HomePage),
   },
+  {
+    path: 'catalogo',
+    canActivate: [requireLogin],
+    loadComponent: () => import('./catalog-page/catalog-page').then((module) => module.CatalogPage),
+  },
   { path: '**', redirectTo: 'login' },
 ];
