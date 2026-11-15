@@ -1,0 +1,46 @@
+<app-store-navigation />
+
+<main>
+  <h1>Meu carrinho</h1>
+  @if (errorMessage()) { <p role="alert">{{ errorMessage() }}</p> }
+
+  @if (loading()) {
+    <p role="status">Carregando carrinho...</p>
+  } @else if (cart(); as currentCart) {
+    <p>{{ currentCart.totalItems }} item(ns) no carrinho</p>
+
+    @if (currentCart.items.length > 0) {
+      <ul aria-label="Itens do carrinho">
+        @for (item of currentCart.items; track item.itemId) {
+          <li>
+            <article>
+              @if (item.imageUrl) {
+                <img [src]="item.imageUrl" [alt]="'Imagem de ' + item.name" width="180">
+              } @else {
+                <p>Imagem ainda não cadastrada</p>
+              }
+              <h2>{{ item.name }}</h2>
+              <p>Preço unitário: {{ item.unitPriceGalleons }} galeões</p>
+              <p>Total da linha: {{ item.lineTotalGalleons }} galeões</p>
+              <p>{{ item.available ? 'Em estoque' : 'Quantidade indisponível no estoque' }}</p>
+              <label [for]="'quantity-' + item.itemId">Quantidade</label>
+              <input [id]="'quantity-' + item.itemId" type="number" min="1" max="99"
+                     [value]="item.quantity" [disabled]="pendingItems().has(item.itemId)"
+                     (change)="updateQuantity(item, $event)">
+              <button type="button" [disabled]="pendingItems().has(item.itemId)"
+                      (click)="remove(item)">Remover do carrinho</button>
+            </article>
+          </li>
+        }
+      </ul>
+
+      <p>Total: {{ currentCart.totalGalleons }} galeões</p>
+      <button type="button" [disabled]="clearing()" (click)="clear()">
+        {{ clearing() ? 'Esvaziando...' : 'Esvaziar carrinho' }}
+      </button>
+      <p>A finalização do pedido será conectada em uma próxima etapa.</p>
+    } @else {
+      <p>Seu carrinho está vazio.</p>
+    }
+  }
+</main>

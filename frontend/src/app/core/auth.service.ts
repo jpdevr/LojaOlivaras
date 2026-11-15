@@ -58,6 +58,10 @@ export class AuthService {
     return this.currentUser;
   }
 
+  updateCurrentUser(user: UserResponse): void {
+    this.currentUser.set(user);
+  }
+
   clearSession(): void {
     this.accessToken = null;
     this.currentUser.set(null);

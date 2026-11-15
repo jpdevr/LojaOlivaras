@@ -8,6 +8,14 @@ const requireLogin: CanActivateFn = () => {
   return auth.getAccessToken() ? true : router.createUrlTree(['/login']);
 };
 
+const requireCustomer: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.getCurrentUser()()?.role === 'CUSTOMER'
+    ? true
+    : router.createUrlTree(['/home']);
+};
+
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
   {
@@ -26,8 +34,18 @@ export const routes: Routes = [
   },
   {
     path: 'wishlist',
-    canActivate: [requireLogin],
+    canActivate: [requireLogin, requireCustomer],
     loadComponent: () => import('./wishlist-page/wishlist-page').then((module) => module.WishlistPage),
+  },
+  {
+    path: 'profile',
+    canActivate: [requireLogin, requireCustomer],
+    loadComponent: () => import('./profile-page/profile-page').then((module) => module.ProfilePage),
+  },
+  {
+    path: 'cart',
+    canActivate: [requireLogin, requireCustomer],
+    loadComponent: () => import('./cart-page/cart-page').then((module) => module.CartPage),
   },
   { path: '**', redirectTo: 'login' },
 ];

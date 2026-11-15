@@ -1,9 +1,11 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable, finalize, map } from 'rxjs';
 import { CatalogItem, CatalogService } from '../core/catalog.service';
+import { AuthService } from '../core/auth.service';
+import { CartService } from '../core/cart.service';
 import { WishlistService } from '../core/wishlist.service';
 import { StoreNavigation } from '../shared/store-navigation';
 
@@ -14,6 +16,8 @@ import { StoreNavigation } from '../shared/store-navigation';
 })
 export class CatalogPage {
   private readonly catalog = inject(CatalogService);
+  private readonly auth = inject(AuthService);
+  private readonly cart = inject(CartService);
   private readonly wishlist = inject(WishlistService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -27,6 +31,9 @@ export class CatalogPage {
   readonly favoriteIds = this.wishlist.favoriteIds;
   readonly pendingFavorites = signal<ReadonlySet<string>>(new Set());
   readonly wishlistMessage = signal<string | null>(null);
+  readonly pendingCartItems = signal<ReadonlySet<string>>(new Set());
+  readonly cartMessage = signal<string | null>(null);
+  readonly canShop = computed(() => this.auth.getCurrentUser()()?.role === 'CUSTOMER');
 
   minPrice: number | null = null;
   maxPrice: number | null = null;
@@ -52,9 +59,11 @@ export class CatalogPage {
   }
 
   constructor() {
-    this.wishlist.load().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      error: () => this.wishlistMessage.set('Não foi possível carregar seus favoritos.'),
-    });
+    if (this.canShop()) {
+      this.wishlist.load().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        error: () => this.wishlistMessage.set('Não foi possível carregar seus favoritos.'),
+      });
+    }
 
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const query = params.get('q')?.trim() ?? '';
@@ -122,6 +131,23 @@ export class CatalogPage {
       })),
     ).subscribe({
       error: () => this.wishlistMessage.set('Não foi possível atualizar a wishlist. Tente novamente.'),
+    });
+  }
+
+  addToCart(itemId: string): void {
+    if (this.pendingCartItems().has(itemId)) return;
+    this.pendingCartItems.update((ids) => new Set(ids).add(itemId));
+    this.cartMessage.set(null);
+    this.cart.add(itemId).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.pendingCartItems.update((ids) => {
+        const next = new Set(ids);
+        next.delete(itemId);
+        return next;
+      })),
+    ).subscribe({
+      next: () => this.cartMessage.set('Varinha adicionada ao carrinho.'),
+      error: () => this.cartMessage.set('Não foi possível adicionar a varinha ao carrinho.'),
     });
   }
 

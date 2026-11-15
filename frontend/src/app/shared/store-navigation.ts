@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { Subject, catchError, debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
@@ -20,6 +20,7 @@ export class StoreNavigation {
   readonly query = signal('');
   readonly suggestions = signal<CatalogItem[]>([]);
   readonly user = this.auth.getCurrentUser();
+  readonly canShop = computed(() => this.user()?.role === 'CUSTOMER');
 
   constructor() {
     this.queryChanges.pipe(

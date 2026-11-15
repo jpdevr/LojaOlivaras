@@ -31,10 +31,16 @@
     <a routerLink="/catalogo">Catálogo</a>
 
     <details>
-      <summary>Perfil{{ user() ? ' — ' + user()!.profileName : '' }}</summary>
+      <summary>{{ canShop() ? 'Perfil' : 'Conta' }}{{ user() ? ' — ' + user()!.profileName : '' }}</summary>
       <ul>
-        <li><a routerLink="/wishlist">Wishlist</a></li>
-        <li><button type="button">Carrinho</button></li>
+        @if (canShop()) {
+          <li><a routerLink="/profile">Meu perfil</a></li>
+          <li><a routerLink="/wishlist">Wishlist</a></li>
+          <li><a routerLink="/cart">Carrinho</a></li>
+          <li><a routerLink="/profile" fragment="orders">Pedidos</a></li>
+        } @else {
+          <li>Área administrativa</li>
+        }
       </ul>
     </details>
 

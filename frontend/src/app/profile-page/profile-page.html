@@ -1,0 +1,188 @@
+<app-store-navigation />
+
+<main>
+  <h1>Meu perfil</h1>
+
+  @if (errorMessage()) { <p role="alert">{{ errorMessage() }}</p> }
+  @if (successMessage()) { <p role="status">{{ successMessage() }}</p> }
+
+  <nav aria-label="Atalhos da conta">
+    <ul>
+      <li><a routerLink="/wishlist">Minha Wishlist</a></li>
+      <li><a routerLink="/cart">Meu carrinho</a></li>
+      <li><a href="#orders">Meus pedidos</a></li>
+    </ul>
+  </nav>
+
+  <section aria-labelledby="profile-data-title">
+    <h2 id="profile-data-title">Dados da conta</h2>
+    @if (loadingProfile()) {
+      <p role="status">Carregando dados do perfil...</p>
+    } @else {
+      <form (ngSubmit)="saveProfile()" #profileFormElement="ngForm">
+        <p>
+          <label for="profile-name">Nome de perfil</label><br>
+          <input id="profile-name" name="profileName" type="text" autocomplete="nickname"
+                 required minlength="2" maxlength="80" [(ngModel)]="profileForm.profileName">
+        </p>
+        <p>
+          <label for="profile-email">E-mail</label><br>
+          <input id="profile-email" type="email" [value]="user()?.email ?? ''" disabled>
+          <span>O e-mail não pode ser alterado por esta tela.</span>
+        </p>
+        <p>
+          <label for="profile-phone">Telefone</label><br>
+          <input id="profile-phone" name="phone" type="tel" autocomplete="tel" required
+                 pattern="^\+?[0-9 ()-]{10,30}$" [(ngModel)]="profileForm.phone">
+        </p>
+        <button type="submit" [disabled]="savingProfile() || profileFormElement.invalid">
+          {{ savingProfile() ? 'Salvando...' : 'Salvar alterações' }}
+        </button>
+      </form>
+    }
+  </section>
+
+  <section aria-labelledby="password-title">
+    <h2 id="password-title">Alterar senha</h2>
+    <form (ngSubmit)="changePassword()" #passwordFormElement="ngForm">
+      <p>
+        <label for="current-password">Senha atual</label><br>
+        <input id="current-password" name="currentPassword" type="password"
+               autocomplete="current-password" required maxlength="72"
+               [(ngModel)]="passwordForm.currentPassword">
+      </p>
+      <p>
+        <label for="new-password">Nova senha (mínimo de 10 caracteres)</label><br>
+        <input id="new-password" name="newPassword" type="password" autocomplete="new-password"
+               required minlength="10" maxlength="72" [(ngModel)]="passwordForm.newPassword">
+      </p>
+      <p>
+        <label for="confirm-password">Confirme a nova senha</label><br>
+        <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password"
+               required minlength="10" maxlength="72" [(ngModel)]="passwordForm.confirmPassword">
+      </p>
+      <button type="submit" [disabled]="changingPassword() || passwordFormElement.invalid">
+        {{ changingPassword() ? 'Alterando...' : 'Alterar senha' }}
+      </button>
+    </form>
+  </section>
+
+  <section aria-labelledby="addresses-title">
+    <h2 id="addresses-title">Meus endereços</h2>
+    @if (addressError()) { <p role="alert">{{ addressError() }}</p> }
+    @if (loadingAddresses()) {
+      <p role="status">Carregando endereços...</p>
+    } @else {
+      @if (addresses().length > 0) {
+        <ul>
+          @for (address of addresses(); track address.id) {
+            <li>
+              <article>
+                <h3>{{ address.label || 'Endereço' }}{{ address.defaultAddress ? ' (padrão)' : '' }}</h3>
+                <address>
+                  {{ address.recipient }}<br>
+                  {{ address.street }}, {{ address.number }}
+                  @if (address.complement) { , {{ address.complement }} }
+                  <br>{{ address.district }} — {{ address.city }}/{{ address.state }}<br>
+                  CEP {{ address.zipCode }}
+                  @if (address.reference) { <br>Referência: {{ address.reference }} }
+                </address>
+                <button type="button" (click)="editAddress(address)">Editar</button>
+                <button type="button" [disabled]="pendingAddressDeletes().has(address.id)"
+                        (click)="deleteAddress(address)">
+                  {{ pendingAddressDeletes().has(address.id) ? 'Removendo...' : 'Remover' }}
+                </button>
+              </article>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p>Você ainda não cadastrou endereços.</p>
+      }
+      <button type="button" (click)="cancelAddressEdit()">
+        {{ editingAddressId() ? 'Cancelar edição' : 'Limpar formulário' }}
+      </button>
+    }
+
+    <h3>{{ editingAddressId() ? 'Editar endereço' : 'Adicionar endereço' }}</h3>
+    <form (ngSubmit)="saveAddress()" #addressFormElement="ngForm">
+      <p>
+        <label for="address-label">Identificação (ex.: Casa)</label><br>
+        <input id="address-label" name="label" type="text" maxlength="40" [(ngModel)]="addressForm.label">
+      </p>
+      <p>
+        <label for="address-recipient">Destinatário</label><br>
+        <input id="address-recipient" name="recipient" type="text" autocomplete="name"
+               required maxlength="120" [(ngModel)]="addressForm.recipient">
+      </p>
+      <p>
+        <label for="address-zip">CEP</label><br>
+        <input id="address-zip" name="zipCode" type="text" autocomplete="postal-code"
+               required pattern="^\d{5}-?\d{3}$" maxlength="9" [(ngModel)]="addressForm.zipCode">
+      </p>
+      <p>
+        <label for="address-street">Rua</label><br>
+        <input id="address-street" name="street" type="text" autocomplete="address-line1"
+               required maxlength="160" [(ngModel)]="addressForm.street">
+      </p>
+      <p>
+        <label for="address-number">Número</label><br>
+        <input id="address-number" name="number" type="text" required maxlength="30"
+               [(ngModel)]="addressForm.number">
+      </p>
+      <p>
+        <label for="address-complement">Complemento</label><br>
+        <input id="address-complement" name="complement" type="text" maxlength="120"
+               [(ngModel)]="addressForm.complement">
+      </p>
+      <p>
+        <label for="address-district">Bairro</label><br>
+        <input id="address-district" name="district" type="text" required maxlength="120"
+               [(ngModel)]="addressForm.district">
+      </p>
+      <p>
+        <label for="address-city">Cidade</label><br>
+        <input id="address-city" name="city" type="text" autocomplete="address-level2"
+               required maxlength="120" [(ngModel)]="addressForm.city">
+      </p>
+      <p>
+        <label for="address-state">UF</label><br>
+        <input id="address-state" name="state" type="text" autocomplete="address-level1"
+               required pattern="^[A-Za-z]{2}$" maxlength="2" [(ngModel)]="addressForm.state">
+      </p>
+      <p>
+        <label for="address-reference">Referência para entrega</label><br>
+        <input id="address-reference" name="reference" type="text" maxlength="160"
+               [(ngModel)]="addressForm.reference">
+      </p>
+      <p>
+        <input id="address-default" name="defaultAddress" type="checkbox"
+               [(ngModel)]="addressForm.defaultAddress">
+        <label for="address-default">Definir como endereço padrão</label>
+      </p>
+      <button type="submit" [disabled]="savingAddress() || addressFormElement.invalid">
+        {{ savingAddress() ? 'Salvando...' : (editingAddressId() ? 'Salvar endereço' : 'Adicionar endereço') }}
+      </button>
+    </form>
+  </section>
+
+  <section id="orders" aria-labelledby="orders-title">
+    <h2 id="orders-title">Meus pedidos</h2>
+    <p>O histórico de pedidos será conectado nesta etapa futura. Ainda não há pedidos carregados.</p>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Pedido</th>
+          <th scope="col">Data</th>
+          <th scope="col">Total</th>
+          <th scope="col">Status do pedido</th>
+          <th scope="col">Status do pagamento</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5">Nenhum pedido para exibir.</td></tr>
+      </tbody>
+    </table>
+    <p>Status já previstos pela API: <code>CONFIRMED</code> e <code>SIMULATED_APPROVED</code>.</p>
+  </section>
+</main>
