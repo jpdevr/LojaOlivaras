@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Address, AddressRequest, ProfileService } from '../core/profile.service';
 import { AuthService } from '../core/auth.service';
+import { CepLookupService } from '../core/cep-lookup.service';
 import { StoreNavigation } from '../shared/store-navigation';
 
 function emptyAddress(): AddressRequest {
@@ -22,6 +23,7 @@ function emptyAddress(): AddressRequest {
 export class ProfilePage {
   private readonly profile = inject(ProfileService);
   private readonly auth = inject(AuthService);
+  private readonly cepLookup = inject(CepLookupService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly user = this.auth.getCurrentUser();
@@ -30,6 +32,8 @@ export class ProfilePage {
   readonly changingPassword = signal(false);
   readonly loadingAddresses = signal(true);
   readonly savingAddress = signal(false);
+  readonly lookingUpCep = signal(false);
+  readonly cepMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly addressError = signal<string | null>(null);
@@ -147,6 +151,47 @@ export class ProfilePage {
     this.editingAddressId.set(null);
     this.addressForm = emptyAddress();
     this.addressError.set(null);
+  }
+
+  isCepLookupDisabled(): boolean {
+    return this.lookingUpCep() || this.addressForm.zipCode.replace(/\D/g, '').length !== 8;
+  }
+
+  lookupCep(): void {
+    const cep = this.addressForm.zipCode.replace(/\D/g, '');
+    this.addressError.set(null);
+    this.cepMessage.set(null);
+
+    if (cep.length !== 8) {
+      this.addressError.set('Informe um CEP válido com oito dígitos.');
+      return;
+    }
+
+    this.lookingUpCep.set(true);
+    this.cepLookup.lookup(cep).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => {
+        this.lookingUpCep.set(false);
+        if (result.erro === true || result.erro === 'true') {
+          this.addressError.set('CEP não encontrado. Confira o número e tente novamente.');
+          return;
+        }
+
+        this.addressForm = {
+          ...this.addressForm,
+          zipCode: result.cep?.replace(/\D/g, '') || cep,
+          street: result.logradouro || this.addressForm.street,
+          complement: this.addressForm.complement || result.complemento || '',
+          district: result.bairro || this.addressForm.district,
+          city: result.localidade || this.addressForm.city,
+          state: result.uf || this.addressForm.state,
+        };
+        this.cepMessage.set('CEP encontrado. Confira os dados e complete número e destinatário.');
+      },
+      error: () => {
+        this.lookingUpCep.set(false);
+        this.addressError.set('Não foi possível consultar o CEP agora. Verifique o número ou tente novamente mais tarde.');
+      },
+    });
   }
 
   saveAddress(): void {

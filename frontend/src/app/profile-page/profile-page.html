@@ -70,6 +70,7 @@
   <section aria-labelledby="addresses-title">
     <h2 id="addresses-title">Meus endereços</h2>
     @if (addressError()) { <p role="alert">{{ addressError() }}</p> }
+    @if (cepMessage()) { <p role="status">{{ cepMessage() }}</p> }
     @if (loadingAddresses()) {
       <p role="status">Carregando endereços...</p>
     } @else {
@@ -107,18 +108,17 @@
     <h3>{{ editingAddressId() ? 'Editar endereço' : 'Adicionar endereço' }}</h3>
     <form (ngSubmit)="saveAddress()" #addressFormElement="ngForm">
       <p>
-        <label for="address-label">Identificação (ex.: Casa)</label><br>
-        <input id="address-label" name="label" type="text" maxlength="40" [(ngModel)]="addressForm.label">
+        <label for="address-zip">CEP</label><br>
+        <input id="address-zip" name="zipCode" type="text" autocomplete="postal-code"
+               required pattern="^\d{5}-?\d{3}$" maxlength="9" [(ngModel)]="addressForm.zipCode">
+        <button type="button" [disabled]="isCepLookupDisabled()" (click)="lookupCep()">
+          {{ lookingUpCep() ? 'Consultando...' : 'Consultar CEP' }}
+        </button>
       </p>
       <p>
         <label for="address-recipient">Destinatário</label><br>
         <input id="address-recipient" name="recipient" type="text" autocomplete="name"
                required maxlength="120" [(ngModel)]="addressForm.recipient">
-      </p>
-      <p>
-        <label for="address-zip">CEP</label><br>
-        <input id="address-zip" name="zipCode" type="text" autocomplete="postal-code"
-               required pattern="^\d{5}-?\d{3}$" maxlength="9" [(ngModel)]="addressForm.zipCode">
       </p>
       <p>
         <label for="address-street">Rua</label><br>
