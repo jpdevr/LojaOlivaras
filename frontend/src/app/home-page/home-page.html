@@ -2,6 +2,6 @@
 
 <main>
   <h1>Bem-vindo à Loja Olivaras</h1>
-  <p>Olá, {{ user()?.profileName }}. Encontre a varinha que escolheu você.</p>
+  <p>{{ user() ? 'Olá, ' + user()!.profileName + '. ' : '' }}Encontre a varinha que escolheu você.</p>
   <p>Explore o catálogo ou pesquise pelo nome de uma varinha ou personagem.</p>
 </main>

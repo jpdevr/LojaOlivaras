@@ -2,10 +2,12 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router, Routes } from '@angular/router';
 import { AuthService } from './core/auth.service';
 
-const requireLogin: CanActivateFn = () => {
+const requireLogin: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.getAccessToken() ? true : router.createUrlTree(['/login']);
+  return auth.getAccessToken() ? true : router.createUrlTree(['/login'], {
+    queryParams: { returnUrl: state.url },
+  });
 };
 
 const requireCustomer: CanActivateFn = () => {
@@ -17,19 +19,17 @@ const requireCustomer: CanActivateFn = () => {
 };
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'login' },
+  { path: '', pathMatch: 'full', redirectTo: 'home' },
   {
     path: 'login',
     loadComponent: () => import('./auth-page/auth-page').then((module) => module.AuthPage),
   },
   {
     path: 'home',
-    canActivate: [requireLogin],
     loadComponent: () => import('./home-page/home-page').then((module) => module.HomePage),
   },
   {
     path: 'catalogo',
-    canActivate: [requireLogin],
     loadComponent: () => import('./catalog-page/catalog-page').then((module) => module.CatalogPage),
   },
   {
@@ -44,7 +44,6 @@ export const routes: Routes = [
   },
   {
     path: 'cart',
-    canActivate: [requireLogin, requireCustomer],
     loadComponent: () => import('./cart-page/cart-page').then((module) => module.CartPage),
   },
   {
@@ -57,5 +56,5 @@ export const routes: Routes = [
     canActivate: [requireLogin, requireCustomer],
     loadComponent: () => import('./order-page/order-page').then((module) => module.OrderPage),
   },
-  { path: '**', redirectTo: 'login' },
+  { path: '**', redirectTo: 'home' },
 ];

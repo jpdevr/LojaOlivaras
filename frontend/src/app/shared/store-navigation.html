@@ -29,21 +29,27 @@
     </form>
 
     <a routerLink="/catalogo">Catálogo</a>
+    <a routerLink="/cart">Carrinho</a>
 
     <details>
-      <summary>{{ canShop() ? 'Perfil' : 'Conta' }}{{ user() ? ' — ' + user()!.profileName : '' }}</summary>
+      <summary>{{ user() ? 'Perfil — ' + user()!.profileName : 'Minha conta' }}</summary>
       <ul>
-        @if (canShop()) {
+        @if (!user() || canShop()) {
           <li><a routerLink="/profile">Meu perfil</a></li>
           <li><a routerLink="/wishlist">Wishlist</a></li>
-          <li><a routerLink="/cart">Carrinho</a></li>
           <li><a routerLink="/profile" fragment="orders">Pedidos</a></li>
         } @else {
           <li>Área administrativa</li>
         }
+        @if (!user()) {
+          <li><a routerLink="/login">Entrar</a></li>
+          <li><a routerLink="/login" [queryParams]="{ view: 'register' }">Criar conta</a></li>
+        }
       </ul>
     </details>
 
-    <button type="button" (click)="logout()">Sair</button>
+    @if (user()) {
+      <button type="button" (click)="logout()">Sair</button>
+    }
   </nav>
 </header>

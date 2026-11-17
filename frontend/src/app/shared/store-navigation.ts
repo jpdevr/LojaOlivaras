@@ -59,6 +59,6 @@ export class StoreNavigation {
 
   logout(): void {
     this.auth.clearSession();
-    void this.router.navigateByUrl('/login');
+    void this.router.navigateByUrl('/home');
   }
 }

@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable, finalize, map } from 'rxjs';
 import { CatalogItem, CatalogService } from '../core/catalog.service';
@@ -20,6 +20,7 @@ export class CatalogPage {
   private readonly cart = inject(CartService);
   private readonly wishlist = inject(WishlistService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly items = signal<CatalogItem[]>([]);
@@ -111,6 +112,10 @@ export class CatalogPage {
   }
 
   toggleFavorite(itemId: string): void {
+    if (!this.canShop()) {
+      void this.router.navigate(['/login'], { queryParams: { returnUrl: '/catalogo' } });
+      return;
+    }
     if (this.pendingFavorites().has(itemId)) return;
     this.pendingFavorites.update((ids) => new Set(ids).add(itemId));
     this.wishlistMessage.set(null);
@@ -134,11 +139,12 @@ export class CatalogPage {
     });
   }
 
-  addToCart(itemId: string): void {
+  addToCart(item: CatalogItem): void {
+    const itemId = item.id;
     if (this.pendingCartItems().has(itemId)) return;
     this.pendingCartItems.update((ids) => new Set(ids).add(itemId));
     this.cartMessage.set(null);
-    this.cart.add(itemId).pipe(
+    this.cart.add(itemId, 1, item).pipe(
       takeUntilDestroyed(this.destroyRef),
       finalize(() => this.pendingCartItems.update((ids) => {
         const next = new Set(ids);

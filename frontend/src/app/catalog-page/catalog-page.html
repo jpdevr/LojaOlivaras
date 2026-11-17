@@ -123,11 +123,11 @@
                                     Favoritar
                                   }
                                 </button>
-                                <button type="button" [disabled]="pendingCartItems().has(item.id)"
-                                        (click)="addToCart(item.id)">
-                                  {{ pendingCartItems().has(item.id) ? 'Adicionando...' : 'Adicionar ao carrinho' }}
-                                </button>
                               }
+                              <button type="button" [disabled]="pendingCartItems().has(item.id) || !item.available"
+                                      (click)="addToCart(item)">
+                                {{ pendingCartItems().has(item.id) ? 'Adicionando...' : 'Adicionar ao carrinho' }}
+                              </button>
                               <p>{{ item.description }}</p>
                               <ul>
                                 @if (item.ownerName) { <li>Associada a: {{ item.ownerName }}</li> }
