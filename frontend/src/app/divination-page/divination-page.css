@@ -1,0 +1,199 @@
+.divination-page.page-shell {
+  --divination-ink: #f5e8d0;
+  --divination-metal: #e9c27c;
+  --divination-panel: #1c1716;
+  --divination-edge: #0e0b0c;
+  --frame-filter: none;
+  max-width: 920px;
+  margin-inline: auto;
+  padding: clamp(20px, 3.8vw, 54px);
+  color: var(--divination-ink);
+  background:
+    radial-gradient(ellipse at 48% 13%, color-mix(in srgb, var(--wood) 25%, #282020), transparent 68%),
+    var(--vellum) center / cover,
+    var(--divination-panel);
+  background-blend-mode: normal, soft-light, normal;
+  box-shadow: inset 0 0 66px #100a09, 0 12px 30px #090605ab;
+}
+
+.divination-stage {
+  position: relative;
+  min-width: 0;
+  max-width: 700px;
+  margin: auto;
+  text-align: center;
+}
+
+.divination-stage h2 {
+  margin: 0;
+  color: var(--divination-ink);
+  font-size: clamp(2.05rem, 4.4vw, 3.9rem);
+  line-height: 1.1;
+  text-shadow: 0 3px 5px #100605;
+}
+
+.divination-stage h2:focus { outline: none; }
+.divination-stage p[role='alert'] { color: #ffe0c9; margin: 12px 0; }
+.divination-intro, .divination-forging {
+  display: grid;
+  min-height: clamp(310px, 44vw, 410px);
+  justify-items: center;
+  align-content: center;
+  gap: 19px;
+}
+.divination-intro p { max-width: 440px; margin: 0; }
+
+.divination-sigil {
+  display: grid;
+  place-items: center;
+  width: clamp(58px, 11vw, 87px);
+  aspect-ratio: 1;
+  border: 3px double #dfae67a1;
+  border-radius: 50%;
+  color: var(--divination-metal);
+  background: radial-gradient(ellipse, #aa723335, transparent 72%);
+  box-shadow: 0 0 32px #cc863533, inset 0 0 21px #cc86353b;
+  font-size: clamp(1.9rem, 5vw, 3.3rem);
+}
+
+.divination-count { margin: 0 0 8px; color: var(--divination-metal); font-weight: bold; }
+.divination-progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #f5d1a13d;
+}
+.divination-progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ae7137, #ffdf92);
+  transition: width 240ms ease-out;
+}
+
+.divination-stage .divination-question {
+  display: grid;
+  place-content: center;
+  min-height: 2.3em;
+  margin: clamp(15px, 2.3vw, 31px) 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.32rem, 3vw, 2.25rem);
+  text-wrap: balance;
+}
+.divination-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 15px;
+}
+.divination-option {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 74px;
+  padding: 14px;
+  border: 2px solid #25160e;
+  color: var(--divination-ink);
+  background: linear-gradient(145deg, #3c2b20, #261d19);
+  box-shadow: inset 0 0 10px #08040192, 0 3px 7px #100806b0;
+  text-align: left;
+  cursor: pointer;
+}
+.divination-option input { flex: none; accent-color: #e3ad68; }
+.divination-option:is(:hover, :has(:checked)) { background: linear-gradient(145deg, #623f22, #342117); }
+.divination-option:has(:focus-visible) { outline: 2px solid var(--divination-metal); outline-offset: 2px; }
+.divination-actions, .divination-purchase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 25px;
+}
+.divination-actions button { min-width: 112px; }
+.divination-page .divination-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 19px;
+  font-weight: bold;
+  color: #241205;
+  background: radial-gradient(ellipse at 70% 17%, #ffde9d, #dba75c 70%, #aa6d32);
+}
+
+.divination-revealing { isolation: isolate; overflow: hidden; }
+.divination-forging { position: relative; z-index: 1; }
+.divination-fog, .divination-art.just-revealed::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  background: var(--store-fog-texture) 0 center / 75% 100% repeat-x;
+  mask-image: radial-gradient(ellipse, #000 24%, #000a 54%, transparent 76%);
+}
+.divination-fog { animation: divination-gather 1750ms ease-in-out both; }
+@keyframes divination-gather {
+  from { opacity: .13; background-position: -240px center; }
+  58% { opacity: .9; }
+  to { opacity: .35; background-position: 180px center; }
+}
+
+.divination-stage.divination-result { max-width: 820px; text-align: left; }
+.divination-result h2 { margin-bottom: 22px; text-align: center; }
+.divination-art {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3.2;
+  border: 3px solid var(--divination-edge);
+  background: #1b1712;
+}
+.divination-art app-wand-image { display: block; height: 100%; }
+.divination-art.just-revealed::after { content: ''; animation: divination-clear 850ms ease-out both; }
+@keyframes divination-clear {
+  from { opacity: .9; background-position: -120px center; }
+  to { opacity: 0; background-position: 100px center; }
+}
+.divination-specs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(13px, 3vw, 36px);
+  margin: 20px 0;
+}
+.divination-specs h3 { margin: 0 0 6px; color: var(--divination-metal); }
+.divination-specs p, .divination-specs dd, .divination-specs dl { margin: 0; }
+.divination-specs dl {
+  display: grid;
+  gap: 3px;
+  border-inline-start: 1px solid #e9c27c64;
+  padding-inline-start: clamp(12px, 2vw, 26px);
+}
+.divination-specs dl div { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.divination-specs dt { font-weight: bold; color: var(--divination-metal); }
+.divination-purchase { border-top: 1px solid #e9c27c64; padding-top: 15px; }
+.divination-purchase strong { font-size: clamp(1.4rem, 3vw, 2rem); color: var(--divination-metal); }
+.divination-purchase .button-link { margin: 0; }
+.divination-purchase-actions, .wand-destroy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.divination-page .divination-danger {
+  color: #fff0df;
+  background: linear-gradient(150deg, #712728, #310f10);
+}
+.wand-dialog.wand-destroy-dialog { width: min(460px, calc(100% - 28px)); }
+.wand-destroy-dialog h3 { margin: 0; }
+.wand-destroy-dialog p { margin: 12px 0 16px; }
+.divination-stage .wand-destroy-dialog p[role='alert'] { color: var(--error); }
+.wand-destroy-actions { justify-content: end; }
+
+@media (max-width: 540px) {
+  .divination-options, .divination-specs { grid-template-columns: minmax(0, 1fr); }
+  .divination-option { min-height: 55px; padding-block: 9px; }
+  .divination-specs dl { padding: 10px 0 0; border-inline-start: 0; border-top: 1px solid #e9c27c64; }
+  .divination-art { aspect-ratio: 2.65; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .divination-progress span { transition: none; }
+  .divination-fog, .divination-art.just-revealed::after { animation: none; display: none; }
+}

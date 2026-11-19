@@ -1,0 +1,100 @@
+<app-store-navigation pageTitle="Adivinhação" />
+
+<main class="divination-page page-shell">
+  <section class="divination-stage" [class.divination-result]="wand()" [class.divination-revealing]="revealing()"
+           aria-label="Adivinhação da varinha">
+    @if (loading()) {
+      <p role="status">Consultando o ateliê…</p>
+    } @else if (loadError(); as message) {
+      <p role="alert">{{ message }}</p>
+      <button class="divination-button" type="button" (click)="load()">Tentar novamente</button>
+    } @else if (revealing()) {
+      <div class="divination-forging">
+        <div class="divination-sigil" aria-hidden="true">✦</div>
+        <h2 #stageTitle tabindex="-1">O ateliê está revelando sua varinha</h2>
+      </div>
+      <div class="divination-fog" aria-hidden="true"></div>
+    } @else if (wand(); as personal) {
+      <h2 #stageTitle tabindex="-1">Sua varinha foi revelada</h2>
+      <div class="divination-art etched-control" [class.just-revealed]="justRevealed()">
+        <app-wand-image [name]="'Varinha de ' + personal.ownerName" [imageUrl]="personal.imageUrl" />
+      </div>
+      <div class="divination-specs">
+        <div>
+          <h3>Varinha de {{ personal.ownerName }}</h3>
+          <p>{{ personal.description }}</p>
+        </div>
+        <dl>
+          <div><dt>Madeira</dt><dd>{{ personal.wood }}</dd></div>
+          <div><dt>Núcleo</dt><dd>{{ personal.core }}</dd></div>
+          @if (personal.lengthInches; as inches) {
+            <div><dt>Comprimento</dt><dd>{{ formatLength(inches) }} polegadas</dd></div>
+          }
+          <div><dt>Flexibilidade</dt><dd>{{ personal.flexibility }}</dd></div>
+          <div><dt>Dono</dt><dd>{{ personal.ownerName }}</dd></div>
+          <div><dt>Fabricante</dt><dd>{{ personal.maker }}</dd></div>
+        </dl>
+      </div>
+      @if (actionError(); as message) { <p role="alert">{{ message }}</p> }
+      <div class="divination-purchase">
+        <strong>{{ personal.priceGalleons }} galeões</strong>
+        <div class="divination-purchase-actions">
+          <button class="divination-danger" type="button" [disabled]="adding() || destroying()"
+                  (click)="askToDestroy()">Destruir varinha</button>
+          @if (personal.available) {
+            <button class="divination-button" type="button" [disabled]="adding() || destroying()" (click)="addToCart(personal)">
+              <app-store-icon name="cart" /> {{ adding() ? 'Levando ao carrinho…' : 'Levar ao carrinho' }}
+            </button>
+          } @else {
+            <span>Varinha adquirida</span>
+            <a class="button-link etched-control" routerLink="/orders">Ver meus pedidos</a>
+          }
+        </div>
+      </div>
+      <dialog #destroyDialog class="wand-dialog wand-destroy-dialog" role="alertdialog"
+              aria-labelledby="destroy-wand-title" aria-describedby="destroy-wand-warning"
+              (cancel)="cancelDestruction($event)">
+        <div class="wand-dialog-frame arch-frame">
+          <h3 id="destroy-wand-title">Destruir varinha</h3>
+          <p id="destroy-wand-warning">Somente uma varinha escolhe seu bruxo. Se destruí-la, você a perderá e talvez não consiga a mesma de novo. Deseja prosseguir?</p>
+          @if (destroyError(); as message) { <p role="alert">{{ message }}</p> }
+          <div class="wand-destroy-actions">
+            <button type="button" autofocus [disabled]="destroying()" (click)="cancelDestruction()">Cancelar</button>
+            <button class="divination-danger" type="button" [disabled]="destroying()" (click)="destroyWand(personal.id)">
+              {{ destroying() ? 'Destruindo…' : 'Sim, destruir varinha' }}
+            </button>
+          </div>
+        </div>
+      </dialog>
+    } @else if (started() && question(); as activeQuestion) {
+      <p class="divination-count">Pergunta {{ position() + 1 }} de {{ questions().length }}</p>
+      <div class="divination-progress" role="progressbar" aria-label="Progresso da Adivinhação"
+           [attr.aria-valuemin]="0" [attr.aria-valuemax]="questions().length" [attr.aria-valuenow]="position() + 1">
+        <span [style.width.%]="(position() + 1) * 100 / questions().length"></span>
+      </div>
+      <h2 #stageTitle id="divination-question" class="divination-question" tabindex="-1">{{ activeQuestion.prompt }}</h2>
+      <div class="divination-options" role="radiogroup" aria-labelledby="divination-question">
+        @for (option of activeQuestion.options; track $index) {
+          <label class="divination-option etched-control">
+            <input type="radio" name="divination-choice" [checked]="selection() === $index" (change)="choose($index)">
+            <span>{{ option }}</span>
+          </label>
+        }
+      </div>
+      @if (actionError(); as message) { <p role="alert">{{ message }}</p> }
+      <div class="divination-actions">
+        <button type="button" (click)="back()">Voltar</button>
+        <button class="divination-button" type="button" [disabled]="selection() === null" (click)="next()">
+          {{ position() + 1 === questions().length ? 'Revelar minha varinha' : 'Continuar' }} <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    } @else {
+      <div class="divination-intro">
+        <div class="divination-sigil" aria-hidden="true">✦</div>
+        <h2 #stageTitle tabindex="-1">Qual varinha escolheu você?</h2>
+        <p>Responda a dez perguntas. Suas escolhas revelarão a madeira, o núcleo e a forma da sua varinha.</p>
+        <button class="divination-button" type="button" (click)="start()">Iniciar a Adivinhação <span aria-hidden="true">✦</span></button>
+      </div>
+    }
+  </section>
+</main>

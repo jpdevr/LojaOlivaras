@@ -90,6 +90,9 @@
           <ul class="etched-control" (click)="accountMenu.open = false">
             @if (!user() || canShop()) {
               <li><a routerLink="/profile"><app-store-icon name="profile" /> Meu perfil</a></li>
+              @if (canShop()) {
+                <li><a routerLink="/adivinhacao"><app-store-icon name="wand" /> Minha varinha</a></li>
+              }
               <li><a routerLink="/wishlist"><app-store-icon name="wishlist" /> Wishlist</a></li>
               <li><a routerLink="/orders"><app-store-icon name="orders" /> Meus pedidos</a></li>
             } @else {

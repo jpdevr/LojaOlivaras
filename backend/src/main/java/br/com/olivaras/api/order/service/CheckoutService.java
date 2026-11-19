@@ -91,7 +91,7 @@ public class CheckoutService {
         if (lines.isEmpty()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Selecione itens no carrinho");
 
         List<UUID> productIds = lines.stream().map(line -> line.getProduct().getId()).distinct().sorted().toList();
-        List<WandProductEntity> lockedProducts = products.findActiveByIdsForUpdate(productIds);
+        List<WandProductEntity> lockedProducts = products.findPurchasableForUpdate(productIds, userId);
         Map<UUID, WandProductEntity> productById = lockedProducts.stream()
                 .collect(Collectors.toMap(WandProductEntity::getId, Function.identity()));
         if (productById.size() != productIds.size()) {

@@ -1,6 +1,7 @@
 package br.com.olivaras.api.catalog.repository;
 
 import br.com.olivaras.api.catalog.entity.WandProductEntity;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,14 +14,23 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface WandProductRepository extends JpaRepository<WandProductEntity, UUID> {
-    Page<WandProductEntity> findAllByActiveTrue(Pageable pageable);
+    Page<WandProductEntity> findAllByActiveTrueAndCustomerOwnerIdIsNull(Pageable pageable);
 
-    Optional<WandProductEntity> findByIdAndActiveTrue(UUID id);
+    Optional<WandProductEntity> findByIdAndActiveTrueAndCustomerOwnerIdIsNull(UUID id);
+
+    Optional<WandProductEntity> findByCustomerOwnerIdAndActiveTrue(UUID customerId);
+
+    @Query("""
+            select p from WandProductEntity p where p.id = :id and p.active = true
+              and (p.customerOwnerId is null or p.customerOwnerId = :customerId)
+            """)
+    Optional<WandProductEntity> findPurchasable(@Param("id") UUID id, @Param("customerId") UUID customerId);
 
     @Query(value = """
             select candidate.*
             from wand_product selected
-            join wand_product candidate on candidate.active and candidate.id <> selected.id
+            join wand_product candidate on candidate.active and candidate.customer_owner_id is null
+                and candidate.id <> selected.id
             cross join lateral (
                 select
                     case when lower(candidate.core) = lower(selected.core) then 6 else 0 end
@@ -33,19 +43,24 @@ public interface WandProductRepository extends JpaRepository<WandProductEntity, 
                     + case when candidate.canon_tier = selected.canon_tier then 1 else 0 end
                     as score
             ) relevance
-            where selected.id = :id and selected.active and relevance.score > 0
+            where selected.id = :id and selected.active and selected.customer_owner_id is null and relevance.score > 0
             order by relevance.score desc, candidate.name, candidate.id
             limit 3
             """, nativeQuery = true)
     List<WandProductEntity> findRelated(@Param("id") UUID id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select p from WandProductEntity p where p.id in :ids and p.active = true order by p.id")
-    java.util.List<WandProductEntity> findActiveByIdsForUpdate(@Param("ids") java.util.Collection<UUID> ids);
+    @Query("""
+            select p from WandProductEntity p where p.id in :ids and p.active = true
+              and (p.customerOwnerId is null or p.customerOwnerId = :customerId) order by p.id
+            """)
+    List<WandProductEntity> findPurchasableForUpdate(@Param("ids") Collection<UUID> ids,
+                                                   @Param("customerId") UUID customerId);
 
     @Query("""
             select p from WandProductEntity p
             where p.active = true
+              and p.customerOwnerId is null
               and (:term = '' or lower(p.name) like lower(concat('%', :term, '%'))
                    or lower(coalesce(p.ownerName, '')) like lower(concat('%', :term, '%'))
                    or lower(coalesce(p.description, '')) like lower(concat('%', :term, '%')))

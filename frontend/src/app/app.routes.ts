@@ -33,6 +33,11 @@ export const routes: Routes = [
     loadComponent: () => import('./catalog-page/catalog-page').then((module) => module.CatalogPage),
   },
   {
+    path: 'adivinhacao',
+    canActivate: [requireLogin, requireCustomer],
+    loadComponent: () => import('./divination-page/divination-page').then((module) => module.DivinationPage),
+  },
+  {
     path: 'wishlist',
     canActivate: [requireLogin, requireCustomer],
     loadComponent: () => import('./wishlist-page/wishlist-page').then((module) => module.WishlistPage),

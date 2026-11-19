@@ -35,7 +35,7 @@ public class WishlistService {
     @Transactional
     public WishlistItemResponse add(UUID userId, WishlistItemRequest request) {
         requireActiveUser(userId);
-        products.findByIdAndActiveTrue(request.itemId())
+        products.findByIdAndActiveTrueAndCustomerOwnerIdIsNull(request.itemId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item não encontrado"));
         wishlist.addIfAbsent(userId, request.itemId());
         return wishlist.findByUser_IdAndProduct_Id(userId, request.itemId())

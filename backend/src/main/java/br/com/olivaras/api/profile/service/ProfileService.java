@@ -65,7 +65,8 @@ public class ProfileService {
 
     @Transactional
     public void deleteAccount(UUID userId, DeleteAccountRequest request) {
-        UserEntity user = activeUser(userId);
+        UserEntity user = users.findActiveByIdForUpdate(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil não encontrado"));
         if (user.getPasswordHash() != null) {
             if (request.currentPassword() == null || request.currentPassword().isBlank()
                     || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {

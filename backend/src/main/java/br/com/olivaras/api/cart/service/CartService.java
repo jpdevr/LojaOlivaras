@@ -51,7 +51,7 @@ public class CartService {
     @Transactional
     public CartResponse add(UUID userId, AddCartItemRequest request) {
         ShoppingCartEntity cart = lockedOrCreateCart(userId);
-        WandProductEntity product = activeProduct(request.itemId());
+        WandProductEntity product = activeProduct(request.itemId(), userId);
         CartItemEntity line = items.findByCart_IdAndProduct_Id(cart.getId(), product.getId()).orElse(null);
         int newQuantity = request.quantity() + (line == null ? 0 : line.getQuantity());
         ensureStock(product, newQuantity);
@@ -71,7 +71,7 @@ public class CartService {
 
         int skipped = 0;
         for (AddCartItemRequest entry : request.items()) {
-            WandProductEntity product = products.findByIdAndActiveTrue(entry.itemId()).orElse(null);
+            WandProductEntity product = products.findByIdAndActiveTrueAndCustomerOwnerIdIsNull(entry.itemId()).orElse(null);
             if (product == null) {
                 skipped += entry.quantity();
                 continue;
@@ -94,7 +94,7 @@ public class CartService {
     public CartResponse updateQuantity(UUID userId, UUID itemId, UpdateCartQuantityRequest request) {
         ShoppingCartEntity cart = lockedExistingCart(userId);
         CartItemEntity line = ownedLine(cart.getId(), itemId);
-        ensureStock(activeProduct(itemId), request.quantity());
+        ensureStock(activeProduct(itemId, userId), request.quantity());
         line.setQuantity(request.quantity());
         items.saveAndFlush(line);
         return get(userId);
@@ -133,8 +133,8 @@ public class CartService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item não está no carrinho"));
     }
 
-    private WandProductEntity activeProduct(UUID id) {
-        return products.findByIdAndActiveTrue(id)
+    private WandProductEntity activeProduct(UUID id, UUID userId) {
+        return products.findPurchasable(id, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item não encontrado"));
     }
 

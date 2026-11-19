@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 
 type StoreIconName = 'home' | 'catalog' | 'cart' | 'profile' | 'wishlist' | 'orders'
-  | 'sign-in' | 'register' | 'sign-out' | 'shield' | 'search';
+  | 'sign-in' | 'register' | 'sign-out' | 'shield' | 'search' | 'wand';
 
 @Component({
   selector: 'app-store-icon',

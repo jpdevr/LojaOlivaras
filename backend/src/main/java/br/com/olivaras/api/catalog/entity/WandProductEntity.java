@@ -27,6 +27,9 @@ public class WandProductEntity {
     @Column(name = "owner_name", length = 120)
     private String ownerName;
 
+    @Column(name = "customer_owner_id", updatable = false)
+    private UUID customerOwnerId;
+
     @Column(length = 80)
     private String wood;
 
@@ -48,7 +51,7 @@ public class WandProductEntity {
     @Column(name = "canon_tier", nullable = false, length = 40)
     private String canonTier;
 
-    @Column(name = "source_reference", nullable = false, length = 500)
+    @Column(name = "source_reference", length = 500)
     private String sourceReference;
 
     @Column(name = "price_galleons", nullable = false, precision = 12, scale = 2)
@@ -70,6 +73,34 @@ public class WandProductEntity {
     private Instant updatedAt;
 
     protected WandProductEntity() {}
+
+    public static WandProductEntity personalWand(UUID customerId, String ownerName, String wood, String core,
+                                                BigDecimal length, String flexibility, String description,
+                                                String imageUrl) {
+        WandProductEntity wand = new WandProductEntity();
+        wand.slug = "personal-" + UUID.randomUUID();
+        wand.name = "Varinha pessoal";
+        wand.ownerName = ownerName;
+        wand.customerOwnerId = customerId;
+        wand.wood = wood;
+        wand.core = core;
+        wand.lengthInches = length;
+        wand.flexibility = flexibility;
+        wand.maker = "Ateliê Magia Olivaras";
+        wand.description = description;
+        wand.canonTier = "PERSONAL";
+        wand.priceGalleons = BigDecimal.valueOf(7);
+        wand.imageUrl = imageUrl;
+        wand.stock = 1;
+        wand.active = true;
+        return wand;
+    }
+
+    public void retirePersonalWand() {
+        ownerName = null;
+        stock = 0;
+        active = false;
+    }
 
     public void decreaseStock(int quantity) {
         if (quantity < 1 || stock < quantity) throw new IllegalArgumentException("Estoque insuficiente");

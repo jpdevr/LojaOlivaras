@@ -25,7 +25,7 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public Page<CatalogItemResponse> list(int page, int size) {
         Pageable pageable = pageable(page, size);
-        return products.findAllByActiveTrue(pageable).map(CatalogItemResponse::from);
+        return products.findAllByActiveTrueAndCustomerOwnerIdIsNull(pageable).map(CatalogItemResponse::from);
     }
 
     @Transactional(readOnly = true)
@@ -37,7 +37,7 @@ public class CatalogService {
 
     @Transactional(readOnly = true)
     public CatalogItemResponse detail(UUID id) {
-        WandProductEntity product = products.findByIdAndActiveTrue(id)
+        WandProductEntity product = products.findByIdAndActiveTrueAndCustomerOwnerIdIsNull(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item não encontrado"));
         return CatalogItemResponse.from(product);
     }
