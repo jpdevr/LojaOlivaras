@@ -1,14 +1,8 @@
-<main>
-  <h1>Loja Olivaras</h1>
+<app-store-navigation />
 
-  <nav aria-label="Acesso à conta">
-    <button type="button" [attr.aria-pressed]="view() === 'login'" (click)="selectView('login')">
-      Entrar
-    </button>
-    <button type="button" [attr.aria-pressed]="view() === 'register'" (click)="selectView('register')">
-      Criar conta
-    </button>
-  </nav>
+<main class="auth-page page-shell">
+  <section class="auth-panel arch-frame">
+  <h1 id="auth-title">{{ view() === 'login' ? 'Entrar' : 'Criar conta' }}</h1>
 
   @if (errorMessage()) {
     <p role="alert">{{ errorMessage() }}</p>
@@ -19,8 +13,7 @@
   }
 
   @if (view() === 'login') {
-    <section aria-labelledby="login-title">
-      <h2 id="login-title">Entrar</h2>
+    <section class="auth-form-section" aria-labelledby="auth-title">
 
       <form (ngSubmit)="submitLogin()" #loginFormElement="ngForm">
         <p>
@@ -36,16 +29,18 @@
                  [(ngModel)]="loginForm.password">
         </p>
 
-        <button type="submit" [disabled]="loading() || loginFormElement.invalid">
-          {{ loading() ? 'Entrando...' : 'Entrar' }}
-        </button>
+        <div class="auth-form-actions">
+          <button class="etched-control" type="submit" [disabled]="loading() || loginFormElement.invalid">
+            {{ loading() ? 'Entrando...' : 'Entrar' }}
+          </button>
+          <span>Não tem uma conta? <button class="auth-view-link" type="button" (click)="selectView('register')" [disabled]="loading()">Registre-se agora</button></span>
+        </div>
       </form>
     </section>
   } @else {
-    <section aria-labelledby="register-title">
-      <h2 id="register-title">Criar conta</h2>
+    <section class="auth-form-section auth-register" aria-labelledby="auth-title">
 
-      <form (ngSubmit)="submitRegister()" #registerFormElement="ngForm">
+      <form class="register-grid" (ngSubmit)="submitRegister()" #registerFormElement="ngForm">
         <p>
           <label for="profile-name">Nome de perfil</label><br>
           <input id="profile-name" name="profileName" type="text" autocomplete="nickname"
@@ -59,12 +54,6 @@
         </p>
 
         <p>
-          <label for="register-password">Senha (mínimo de 10 caracteres)</label><br>
-          <input id="register-password" name="password" type="password" autocomplete="new-password"
-                 required minlength="10" maxlength="72" [(ngModel)]="registerForm.password">
-        </p>
-
-        <p>
           <label for="phone">Telefone</label><br>
           <input id="phone" name="phone" type="tel" autocomplete="tel" required
                  pattern="^\+?[0-9 ()-]{10,30}$" [(ngModel)]="registerForm.phone">
@@ -73,15 +62,28 @@
         <p>
           <label for="birth-date">Data de nascimento</label><br>
           <input id="birth-date" name="birthDate" type="date" autocomplete="bday" required
-                 [max]="latestAllowedBirthDate" [(ngModel)]="registerForm.birthDate">
+                 [(ngModel)]="registerForm.birthDate">
         </p>
 
-        <p>É necessário ter mais de 16 anos para criar uma conta.</p>
+        <p>
+          <label for="register-password">Senha</label><br>
+          <input id="register-password" name="password" type="password" autocomplete="new-password"
+                 required maxlength="72" [(ngModel)]="registerForm.password">
+        </p>
+        <p>
+          <label for="register-confirm-password">Confirmar senha</label><br>
+          <input id="register-confirm-password" name="confirmPassword" type="password" autocomplete="new-password"
+                 required maxlength="72" [(ngModel)]="confirmRegisterPassword">
+        </p>
 
-        <button type="submit" [disabled]="loading() || registerFormElement.invalid">
-          {{ loading() ? 'Criando conta...' : 'Criar conta' }}
-        </button>
+        <div class="auth-form-actions">
+          <button class="etched-control" type="submit" [disabled]="loading() || registerFormElement.invalid">
+            {{ loading() ? 'Criando conta...' : 'Criar conta' }}
+          </button>
+          <span>Já tem uma conta? <button class="auth-view-link" type="button" (click)="selectView('login')" [disabled]="loading()">Faça login aqui</button></span>
+        </div>
       </form>
     </section>
   }
+  </section>
 </main>

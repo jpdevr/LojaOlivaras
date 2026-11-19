@@ -1,0 +1,39 @@
+<app-store-navigation pageTitle="Meus pedidos" />
+
+<main class="orders-page page-shell">
+  @if (loading()) {
+    <p role="status">Carregando pedidos…</p>
+  } @else if (errorMessage(); as error) {
+    <p role="alert">{{ error }}</p>
+    <button type="button" (click)="loadOrders()">Tentar novamente</button>
+  } @else if (history(); as page) {
+    @if (page.content.length) {
+      <ul class="order-history" aria-label="Histórico de pedidos">
+        @for (order of page.content; track order.id) {
+          <li class="order-history-entry arch-frame">
+            <dl class="order-facts">
+              <div class="order-id"><dt>Número do pedido</dt><dd>{{ order.id }}</dd></div>
+              <div><dt>Data</dt><dd>{{ order.createdAt | date:'dd/MM/yyyy, HH:mm' }}</dd></div>
+              <div><dt>Total</dt><dd>{{ order.totalGalleons }} galeões</dd></div>
+              <div><dt>Forma de pagamento</dt><dd>{{ labels.method(order.paymentMethod) }}</dd></div>
+              <div><dt>Status do pedido</dt><dd>{{ labels.status(order.status) }}</dd></div>
+              <div><dt>Status do pagamento</dt><dd>{{ labels.payment(order.paymentStatus) }}</dd></div>
+            </dl>
+            <a class="order-action button-link etched-control" [routerLink]="['/orders', order.id]">Acompanhar pedido</a>
+          </li>
+        }
+      </ul>
+
+      @if (page.totalPages > 1) {
+        <nav class="orders-pagination" aria-label="Paginação de pedidos">
+          <button type="button" [disabled]="page.number === 0" (click)="loadOrders(page.number - 1)">Anterior</button>
+          <span>Página {{ page.number + 1 }} de {{ page.totalPages }}</span>
+          <button type="button" [disabled]="page.number + 1 === page.totalPages" (click)="loadOrders(page.number + 1)">Próxima</button>
+        </nav>
+      }
+    } @else {
+      <p>Você ainda não fez nenhum pedido.</p>
+      <a class="order-action button-link etched-control" routerLink="/catalogo">Explorar varinhas</a>
+    }
+  }
+</main>

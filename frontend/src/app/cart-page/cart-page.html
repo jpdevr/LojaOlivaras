@@ -1,46 +1,68 @@
-<app-store-navigation />
+<app-store-navigation pageTitle="Meu carrinho" />
 
-<main>
-  <h1>Meu carrinho</h1>
-  @if (errorMessage()) { <p role="alert">{{ errorMessage() }}</p> }
+<main class="cart-page page-shell">
+  @if (errorMessage(); as error) { <p role="alert">{{ error }}</p> }
+  @if (isCustomer() && transferNotice(); as notice) { <p role="status">{{ notice }}</p> }
+  @if (isCustomer() && transferNeedsRetry()) {
+    <button type="button" [disabled]="working()" (click)="retryTransfer()">Tentar transferência novamente</button>
+  }
 
   @if (loading()) {
     <p role="status">Carregando carrinho...</p>
   } @else if (cart(); as currentCart) {
-    <p>{{ currentCart.totalItems }} item(ns) no carrinho</p>
+    @if (currentCart.items.length) {
+      <div class="cart-layout">
+        <section class="cart-items" aria-label="Itens do carrinho">
+          <div class="cart-toolbar">
+            <label class="cart-select-all">
+              <input type="checkbox" [checked]="allSelected()"
+                     [indeterminate]="!allSelected() && selectedItems().length > 0"
+                     [disabled]="!availableItems().length" (change)="toggleAll()">
+              Selecionar todos ({{ currentCart.totalItems }})
+            </label>
+            <button type="button" [disabled]="working()" (click)="clear()">Esvaziar carrinho</button>
+          </div>
+          <ul class="cart-items-list">
+            @for (item of currentCart.items; track item.itemId) {
+              <li>
+                <article class="cart-item-card">
+                  <input class="cart-item-checkbox" type="checkbox" [checked]="isSelected(item)" [disabled]="!item.available"
+                         [attr.aria-label]="'Selecionar ' + item.name" (change)="toggleItem(item)">
+                  <app-wand-image class="cart-item-image" [name]="item.name" [imageUrl]="item.imageUrl" />
+                  <div class="cart-item-copy">
+                    <h2>{{ item.name }}</h2>
+                    <strong>{{ item.lineTotalGalleons }} galeões</strong>
+                    <small>{{ item.unitPriceGalleons }} por unidade</small>
+                    @if (!item.available) { <small>Quantidade indisponível em estoque</small> }
+                  </div>
+                  <div class="cart-item-actions">
+                    <button type="button" [disabled]="working()" (click)="remove(item)">Remover</button>
+                    <div class="cart-stepper" role="group" [attr.aria-label]="'Quantidade de ' + item.name">
+                      <button type="button" aria-label="Diminuir quantidade" [disabled]="working() || item.quantity <= 1"
+                              (click)="changeQuantity(item, -1)">−</button>
+                      <span>{{ item.quantity }}</span>
+                      <button type="button" aria-label="Aumentar quantidade" [disabled]="working() || !item.available || item.quantity >= 99"
+                              (click)="changeQuantity(item, 1)">+</button>
+                    </div>
+                  </div>
+                </article>
+              </li>
+            }
+          </ul>
+        </section>
 
-    @if (currentCart.items.length > 0) {
-      <ul aria-label="Itens do carrinho">
-        @for (item of currentCart.items; track item.itemId) {
-          <li>
-            <article>
-              @if (item.imageUrl) {
-                <img [src]="item.imageUrl" [alt]="'Imagem de ' + item.name" width="180">
-              } @else {
-                <p>Imagem ainda não cadastrada</p>
-              }
-              <h2>{{ item.name }}</h2>
-              <p>Preço unitário: {{ item.unitPriceGalleons }} galeões</p>
-              <p>Total da linha: {{ item.lineTotalGalleons }} galeões</p>
-              <p>{{ item.available ? 'Em estoque' : 'Quantidade indisponível no estoque' }}</p>
-              <label [for]="'quantity-' + item.itemId">Quantidade</label>
-              <input [id]="'quantity-' + item.itemId" type="number" min="1" max="99"
-                     [value]="item.quantity" [disabled]="pendingItems().has(item.itemId)"
-                     (change)="updateQuantity(item, $event)">
-              <button type="button" [disabled]="pendingItems().has(item.itemId)"
-                      (click)="remove(item)">Remover do carrinho</button>
-            </article>
-          </li>
-        }
-      </ul>
-
-      <p>Total: {{ currentCart.totalGalleons }} galeões</p>
-      <button type="button" [disabled]="clearing()" (click)="clear()">
-        {{ clearing() ? 'Esvaziando...' : 'Esvaziar carrinho' }}
-      </button>
-      <p><a routerLink="/checkout">Continuar para endereço e pagamento</a></p>
+        <aside class="cart-summary arch-frame" aria-labelledby="cart-summary-title">
+          <h2 id="cart-summary-title">Resumo</h2>
+          <div class="cart-summary-total"><span>Total selecionado</span><strong>{{ selectedTotal() }} galeões</strong></div>
+          <button type="button" [disabled]="working() || !selectedQuantity()" (click)="continueCheckout()">
+            Continuar ({{ selectedQuantity() }})
+          </button>
+        </aside>
+      </div>
     } @else {
-      <p>Seu carrinho está vazio.</p>
+      <p>Seu carrinho está vazio. <a routerLink="/catalogo">Explorar varinhas</a></p>
     }
+  } @else {
+    <button type="button" (click)="loadCart()">Tentar novamente</button>
   }
 </main>

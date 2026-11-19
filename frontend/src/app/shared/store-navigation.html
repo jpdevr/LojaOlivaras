@@ -1,55 +1,130 @@
-<header>
-  <nav aria-label="Navegação principal">
-    <a routerLink="/home" aria-label="Página inicial da Loja Olivaras">Loja Olivaras</a>
+<div class="store-lanterns" aria-hidden="true">
+  <span class="store-lantern store-lantern-left store-lantern-outer"></span>
+  <span class="store-lantern store-lantern-left store-lantern-inner"></span>
+  <span class="store-lantern store-lantern-right store-lantern-inner"></span>
+  <span class="store-lantern store-lantern-right store-lantern-outer"></span>
+</div>
 
-    <form role="search" (submit)="$event.preventDefault(); submitSearch()">
-      <label for="product-search">Buscar varinhas</label>
-      <input
-        id="product-search"
-        name="q"
-        type="search"
-        autocomplete="off"
-        placeholder="Digite o nome de uma varinha ou personagem"
-        [value]="query()"
-        (input)="updateQuery($event)"
-        aria-controls="product-suggestions">
-      <button type="submit">Pesquisar</button>
-
-      @if (suggestions().length > 0) {
-        <ul id="product-suggestions" aria-label="Sugestões de varinhas">
-          @for (item of suggestions(); track item.id) {
-            <li>
-              <button type="button" (click)="searchForSuggestion(item)">
-                {{ item.name }} — {{ item.priceGalleons }} galeões
-              </button>
-            </li>
-          }
-        </ul>
+<header class="store-header">
+  <div class="store-nav-shell">
+    <div class="store-brand-row">
+      <a class="store-brand" routerLink="/home" aria-label="Página inicial de Magia Olivaras">
+        <span class="brand-ornament" aria-hidden="true">✦</span>
+        <app-store-wordmark />
+        <span class="brand-ornament" aria-hidden="true">✦</span>
+      </a>
+      @if (pageTitle(); as title) {
+        <h1 class="store-page-title">{{ title }} <span class="brand-ornament" aria-hidden="true">✦</span></h1>
       }
-    </form>
+    </div>
 
-    <a routerLink="/catalogo">Catálogo</a>
-    <a routerLink="/cart">Carrinho</a>
+    <nav class="store-nav etched-control" aria-label="Navegação principal">
+      <div class="store-nav-start">
+        <div class="store-links">
+          <a class="store-nav-link etched-control" routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <app-store-icon name="home" /> Início
+          </a>
+          <a class="store-nav-link etched-control" routerLink="/catalogo" routerLinkActive="active"
+             [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' }">
+            <app-store-icon name="catalog" /> Catálogo
+          </a>
+          <details class="house-picker" name="store-disclosure" #housePicker
+                   (keydown.escape)="closeMenu(housePicker)">
+            <summary [attr.aria-label]="selectedHouse() ? 'Trocar tema: ' + selectedHouse()!.name : 'Escolher uma casa'">
+              @if (selectedHouse(); as house) {
+                <img [src]="house.crest" alt="">
+              } @else {
+                <app-store-icon name="shield" />
+              }
+            </summary>
+            <div class="house-dropdown">
+              <ng-container [ngTemplateOutlet]="houseChoices" [ngTemplateOutletContext]="{ picker: housePicker }" />
+            </div>
+          </details>
+        </div>
 
-    <details>
-      <summary>{{ user() ? 'Perfil — ' + user()!.profileName : 'Minha conta' }}</summary>
-      <ul>
-        @if (!user() || canShop()) {
-          <li><a routerLink="/profile">Meu perfil</a></li>
-          <li><a routerLink="/wishlist">Wishlist</a></li>
-          <li><a routerLink="/profile" fragment="orders">Pedidos</a></li>
-        } @else {
-          <li>Área administrativa</li>
-        }
-        @if (!user()) {
-          <li><a routerLink="/login">Entrar</a></li>
-          <li><a routerLink="/login" [queryParams]="{ view: 'register' }">Criar conta</a></li>
-        }
-      </ul>
-    </details>
+        <form class="store-search" role="search" (submit)="$event.preventDefault(); submitSearch()">
+          <div class="search-control etched-control">
+            <input
+              id="product-search"
+              name="q"
+              type="search"
+              autocomplete="off"
+              placeholder="Buscar varinhas"
+              aria-label="Buscar varinhas"
+              [value]="query()"
+              (input)="updateQuery($event)"
+              [attr.aria-controls]="suggestions().length > 0 ? 'product-suggestions' : null">
+            <button type="submit" aria-label="Pesquisar"><app-store-icon name="search" /></button>
+          </div>
 
-    @if (user()) {
-      <button type="button" (click)="logout()">Sair</button>
-    }
-  </nav>
+          @if (suggestions().length > 0) {
+            <ul id="product-suggestions" class="search-suggestions" aria-label="Sugestões de varinhas">
+              @for (item of suggestions(); track item.id) {
+                <li>
+                  <button type="button" (click)="searchForSuggestion(item)">
+                    {{ item.name }} <span>{{ item.priceGalleons }} galeões</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </form>
+      </div>
+
+      <div class="store-menu-actions">
+        <a class="store-nav-link etched-control cart-link" routerLink="/cart" routerLinkActive="active"
+           [attr.aria-label]="cartLinkLabel()">
+          <app-store-icon name="cart" data-cart-flight-target /> Carrinho
+          @if (cartTotal(); as total) {
+            <span class="cart-quantity" aria-hidden="true">{{ total }}</span>
+          }
+        </a>
+
+        <details class="account-menu" name="store-disclosure" #accountMenu
+                 (keydown.escape)="closeMenu(accountMenu)">
+          <summary>
+            <app-store-icon name="profile" />
+            <span class="account-name">{{ user() ? user()!.profileName : 'Minha conta' }}</span>
+          </summary>
+          <ul class="etched-control" (click)="accountMenu.open = false">
+            @if (!user() || canShop()) {
+              <li><a routerLink="/profile"><app-store-icon name="profile" /> Meu perfil</a></li>
+              <li><a routerLink="/wishlist"><app-store-icon name="wishlist" /> Wishlist</a></li>
+              <li><a routerLink="/orders"><app-store-icon name="orders" /> Meus pedidos</a></li>
+            } @else {
+              <li><span><app-store-icon name="shield" /> Área administrativa</span></li>
+            }
+            @if (!user()) {
+              <li><a routerLink="/login"><app-store-icon name="sign-in" /> Entrar</a></li>
+              <li><a routerLink="/login" [queryParams]="{ view: 'register' }"><app-store-icon name="register" /> Criar conta</a></li>
+            } @else {
+              <li><button type="button" (click)="logout()"><app-store-icon name="sign-out" /> Sair</button></li>
+            }
+          </ul>
+        </details>
+
+      </div>
+    </nav>
+  </div>
 </header>
+
+@if (showHouseRibbon()) {
+  <section class="house-gallery" aria-label="Escolha uma casa">
+    <ng-container [ngTemplateOutlet]="houseChoices" />
+  </section>
+}
+
+<ng-template #houseChoices let-picker="picker">
+  <div class="house-emblems" role="group" aria-label="Escolha as cores de uma casa">
+    @for (house of houseThemes; track house.id) {
+      <button class="house-emblem" type="button"
+              [attr.data-house]="house.id"
+              [attr.aria-pressed]="theme() === house.id" [attr.aria-label]="'Tema ' + house.name"
+              (click)="setTheme(house.id, picker)">
+        <img [src]="house.crest" alt="">
+        <span>{{ house.name }}</span>
+      </button>
+    }
+  </div>
+</ng-template>

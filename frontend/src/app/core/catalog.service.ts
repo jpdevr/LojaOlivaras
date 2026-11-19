@@ -17,6 +17,7 @@ export interface CatalogItem {
   sourceReference: string;
   priceGalleons: number;
   available: boolean;
+  stock: number;
   imageUrl: string | null;
 }
 
@@ -41,5 +42,13 @@ export class CatalogService {
   search(query: string, page = 0, size = 100): Observable<CatalogPage> {
     const params = new HttpParams().set('q', query).set('page', page).set('size', size);
     return this.http.get<CatalogPage>(`${this.catalogUrl}/search`, { params });
+  }
+
+  detail(itemId: string): Observable<CatalogItem> {
+    return this.http.get<CatalogItem>(`${this.catalogUrl}/item-detail/${itemId}`);
+  }
+
+  related(itemId: string): Observable<CatalogItem[]> {
+    return this.http.get<CatalogItem[]>(`${this.catalogUrl}/item-detail/${itemId}/related`);
   }
 }

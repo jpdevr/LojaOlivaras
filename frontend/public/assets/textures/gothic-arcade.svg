@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 230" fill="none">
+  <defs>
+    <linearGradient id="gilt" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#e8bc70"/><stop offset=".46" stop-color="#80552f"/><stop offset="1" stop-color="#322017"/>
+    </linearGradient>
+    <pattern id="ashlar" width="84" height="42" patternUnits="userSpaceOnUse">
+      <path d="M0 0h84M0 21h84M25 0v21M63 21v21" stroke="#d6aa73" stroke-opacity=".17"/>
+      <path d="M0 2h84M0 23h84M27 2v18M65 23v17" stroke="#130a0a" stroke-opacity=".45" stroke-width="1.5"/>
+    </pattern>
+    <g id="arch">
+      <path d="M12 227V146Q12 70 110 3q98 67 98 143v81" stroke="#120a0a" stroke-width="23"/>
+      <path d="M12 227V146Q12 70 110 3q98 67 98 143v81" stroke="url(#gilt)" stroke-width="17"/>
+      <path d="M12 226v-80Q12 69 110 4q98 65 98 142v80M22 227v-79q0-66 88-131q88 65 88 131v79" stroke="#e2b97a" stroke-opacity=".63" stroke-width="2"/>
+      <path d="M39 209v-61q0-47 71-102q71 55 71 102v61M110 47v178m-71-69h142" stroke="#6a462b" stroke-width="3"/>
+      <path d="M99 76c-22-17-52 14-31 30c16 12 30-2 42-15c12 13 26 27 42 15c21-16-9-47-31-30l-11 9Z" stroke="#c29152" stroke-width="2"/>
+      <path d="m110 103 7 10-7 10-7-10Z" fill="#e5b463"/>
+      <path d="M3 145h33m148 0h33M3 151h33m148 0h33M3 206h33m148 0h33" stroke="url(#gilt)" stroke-width="3"/>
+      <path d="m55 124 2 5 5 2-5 2-2 5-2-5-5-2 5-2Zm110 0 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#e7b55c"/>
+    </g>
+  </defs>
+  <rect width="1280" height="230" fill="url(#ashlar)"/>
+  <g opacity=".8">
+    <use href="#arch" x="-14"/><use href="#arch" x="204"/><use href="#arch" x="422"/>
+    <use href="#arch" x="640"/><use href="#arch" x="858"/><use href="#arch" x="1076"/>
+  </g>
+  <path d="M-20 155Q104 37 319 96Q456 98 640 13Q824 98 961 96Q1176 37 1300 155"
+        stroke="#160b09" stroke-width="16"/>
+  <path d="M-20 155Q104 37 319 96Q456 98 640 13Q824 98 961 96Q1176 37 1300 155"
+        stroke="url(#gilt)" stroke-width="10"/>
+  <path d="M-20 152Q104 34 319 93Q456 95 640 10Q824 95 961 93Q1176 34 1300 152"
+        stroke="#e1b371" stroke-width="2"/>
+</svg>

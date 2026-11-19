@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 152">
+  <defs>
+    <linearGradient id="brass">
+      <stop stop-color="#2b170d"/><stop offset=".4" stop-color="#c98b42"/><stop offset=".57" stop-color="#f5cb7c"/><stop offset="1" stop-color="#3c2012"/>
+    </linearGradient>
+    <radialGradient id="glass">
+      <stop stop-color="#fffbe0"/><stop offset=".35" stop-color="#ffe298"/><stop offset=".72" stop-color="#da8633"/><stop offset="1" stop-color="#5a321a"/>
+    </radialGradient>
+  </defs>
+  <g fill="none" stroke="url(#brass)" stroke-width="4">
+    <ellipse cx="44" cy="2" rx="5" ry="8"/><ellipse cx="44" cy="16" rx="5" ry="8"/>
+    <ellipse cx="44" cy="30" rx="5" ry="8"/><ellipse cx="44" cy="44" rx="5" ry="8"/>
+  </g>
+  <path d="m44 44 8 10 23 13-7 9H20l-7-9 23-13Z" fill="url(#brass)" stroke="#1c100b" stroke-width="3"/>
+  <path d="M19 74h50l-9 49H28Z" fill="url(#glass)" stroke="#301a10" stroke-width="4"/>
+  <path d="m29 76 7 45m23-45-7 45M44 75v46" fill="none" stroke="url(#brass)" stroke-width="3"/>
+  <path d="M25 120h38l-8 11-11 10-11-10Z" fill="url(#brass)" stroke="#271308" stroke-width="3"/>
+  <path d="M44 103c-7-2-7-7 2-16-3 7 7 13-2 16Z" fill="#fffce9"/>
+  <path d="M37 139q7 10 14 0l-7 11Z" fill="url(#brass)"/>
+</svg>

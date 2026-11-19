@@ -41,7 +41,7 @@ export interface AddressRequest {
   city: string;
   state: string;
   reference: string | null;
-  defaultAddress: boolean;
+  defaultAddress: boolean | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -76,5 +76,9 @@ export class ProfileService {
 
   deleteAddress(id: string): Observable<void> {
     return this.http.post<void>(`${this.addressUrl}/delete/${id}`, {});
+  }
+
+  makeDefaultAddress(id: string): Observable<Address> {
+    return this.http.post<Address>(`${this.addressUrl}/default/${id}`, {});
   }
 }

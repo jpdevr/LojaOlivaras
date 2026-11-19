@@ -1,72 +1,95 @@
-<app-store-navigation />
+<app-store-navigation [pageTitle]="showDetails ? 'Detalhes do pedido' : 'Acompanhar pedido'" />
 
-<main>
-  <h1>Acompanhar pedido</h1>
-  @if (errorMessage()) {
-    <p role="alert">{{ errorMessage() }}</p>
+<main class="order-page page-shell">
+  @if (errorMessage(); as error) {
+    <p role="alert">{{ error }}</p>
+    <a class="order-action button-link etched-control" routerLink="/orders">Meus pedidos</a>
   } @else if (loading()) {
-    <p role="status">Carregando pedido...</p>
+    <p role="status">Carregando pedido…</p>
   } @else if (order(); as currentOrder) {
-    <p>Número do pedido: {{ currentOrder.id }}</p>
-    <p>Status: {{ orderStatusName(currentOrder.status) }}</p>
-    <p>Pagamento: {{ paymentStatusName(currentOrder.paymentStatus) }}</p>
-    <p>Forma de pagamento: {{ paymentMethodName(currentOrder.paymentMethod) }}</p>
-    <p>Total: {{ currentOrder.totalGalleons }} galeões</p>
-    <p>Referência: {{ currentOrder.paymentReference }}</p>
+    <section class="order-panel" aria-labelledby="order-panel-title">
+      @if (showDetails) {
+        <h2 id="order-panel-title">Dados do pedido</h2>
+      } @else {
+        <div class="order-payment">
+          <div>
+            <h2 id="order-panel-title">Pagamento</h2>
+            @if (statusError(); as error) { <p role="alert">{{ error }}</p> }
+            @if (currentOrder.paymentStatus === 'PENDING') {
+              @if (currentOrder.paymentExpiresAt) {
+                <p>Tempo restante <strong>{{ formatRemaining(secondsRemaining()) }}</strong></p>
+                <p>Prazo {{ currentOrder.paymentExpiresAt | date:'dd/MM/yyyy, HH:mm' }}</p>
+              }
+              @if (currentOrder.paymentMethod === 'BOLETO') {
+                <button type="button" (click)="downloadBoleto()">Baixar boleto em PDF</button>
+              }
+            } @else {
+              <p>{{ labels.payment(currentOrder.paymentStatus) }}</p>
+              @if (currentOrder.paidAt) {
+                <p>Pago em {{ currentOrder.paidAt | date:'dd/MM/yyyy, HH:mm' }}</p>
+              }
+            }
+          </div>
+          @if (currentOrder.paymentStatus === 'PENDING' && currentOrder.paymentMethod === 'PIX') {
+            @if (qrCode(); as code) {
+              <img class="order-qr" [src]="code" alt="QR code do pedido" width="180" height="180">
+            }
+          }
+        </div>
+        <h3 class="order-summary-title">Dados do pedido</h3>
+      }
 
-    @if (statusError()) { <p role="alert">{{ statusError() }}</p> }
+      <dl class="order-facts">
+        <div class="order-id"><dt>Número do pedido</dt><dd>{{ currentOrder.id }}</dd></div>
+        <div><dt>Status do pedido</dt><dd>{{ labels.status(currentOrder.status) }}</dd></div>
+        <div><dt>Status do pagamento</dt><dd>{{ labels.payment(currentOrder.paymentStatus) }}</dd></div>
+        <div class="order-id"><dt>Referência</dt><dd>{{ currentOrder.paymentReference }}</dd></div>
+        <div><dt>Forma de pagamento</dt><dd>{{ labels.method(currentOrder.paymentMethod) }}</dd></div>
+        <div><dt>Total</dt><dd>{{ currentOrder.totalGalleons }} galeões</dd></div>
+        @if (currentOrder.deliveredAt) {
+          <div><dt>Entregue em</dt><dd>{{ currentOrder.deliveredAt | date:'dd/MM/yyyy, HH:mm' }}</dd></div>
+        } @else if (currentOrder.estimatedDeliveryAt) {
+          <div><dt>Entrega prevista</dt><dd>{{ currentOrder.estimatedDeliveryAt | date:'dd/MM/yyyy, HH:mm' }}</dd></div>
+        }
+      </dl>
 
-    @if (currentOrder.paymentStatus === 'PENDING') {
-      <section aria-labelledby="pending-payment-title">
-        <h2 id="pending-payment-title">Pagamento simulado em andamento</h2>
-        <p>O pedido está confirmado. A simulação concluirá o pagamento quando o prazo terminar.</p>
-        <p>Tempo restante: <strong>{{ formatRemaining(secondsRemaining()) }}</strong></p>
-        @if (currentOrder.paymentExpiresAt) {
-          <p>Prazo: {{ currentOrder.paymentExpiresAt | date:'short' }}</p>
+      <nav class="order-actions" aria-label="Navegação do pedido">
+        @if (showDetails) {
+          <a class="order-action button-link etched-control" [routerLink]="['/orders', currentOrder.id]">Acompanhar pedido</a>
+        } @else {
+          <a class="order-action button-link etched-control" [routerLink]="['/orders', currentOrder.id, 'details']">Detalhes do pedido</a>
         }
-
-        @if (currentOrder.paymentMethod === 'PIX' && payment()?.qrCodeDataUri) {
-          <h3>QR code de demonstração</h3>
-          <img [src]="payment()?.qrCodeDataUri ?? ''" alt="QR code com dados do pagamento simulado" width="300" height="300">
-          <p>Este QR contém apenas um código fictício da loja. A leitura não inicia uma transferência PIX real.</p>
-          <p>Código: <code>{{ currentOrder.paymentInstructions }}</code></p>
-        } @else if (currentOrder.paymentMethod === 'BOLETO') {
-          <h3>Boleto simulado</h3>
-          <p>Baixe o PDF com os dados do pedido. Ele é fictício e não pode ser pago em banco.</p>
-          <p>Código: <code>{{ currentOrder.paymentInstructions }}</code></p>
-          <button type="button" (click)="downloadBoleto()">Baixar boleto em PDF</button>
-        } @else if (currentOrder.paymentMethod === 'CREDIT_CARD') {
-          <p>O cartão é somente uma simulação. Não informe dados de um cartão real.</p>
-          <p>{{ currentOrder.paymentInstructions }}</p>
-        }
-      </section>
-    } @else if (currentOrder.status === 'PROCESSING') {
-      <section aria-labelledby="processing-title">
-        <h2 id="processing-title">Pagamento concluído na simulação</h2>
-        @if (currentOrder.paidAt) { <p>Pagamento simulado em {{ currentOrder.paidAt | date:'short' }}.</p> }
-        @if (currentOrder.estimatedDeliveryAt) {
-          <p>Entrega prevista para {{ currentOrder.estimatedDeliveryAt | date:'short' }}.</p>
-        }
-      </section>
-    } @else if (currentOrder.status === 'DELIVERED') {
-      <section aria-labelledby="delivered-title">
-        <h2 id="delivered-title">Pedido entregue</h2>
-        @if (currentOrder.deliveredAt) { <p>Entrega simulada em {{ currentOrder.deliveredAt | date:'short' }}.</p> }
-      </section>
-    }
-
-    <section aria-labelledby="order-items-title">
-      <h2 id="order-items-title">Itens do pedido</h2>
-      <ul>
-        @for (item of currentOrder.items; track $index) {
-          <li>{{ item.name }} — {{ item.quantity }} × {{ item.unitPriceGalleons }} =
-            {{ item.lineTotalGalleons }} galeões</li>
-        }
-      </ul>
+        <a routerLink="/orders">Meus pedidos</a>
+      </nav>
     </section>
 
-    <p>{{ payment()?.note }}</p>
-    <p><a routerLink="/catalogo">Voltar ao catálogo</a></p>
-    <p><a routerLink="/profile" fragment="orders">Ver histórico de pedidos</a></p>
+    @if (showDetails) {
+      <div class="order-detail-grid">
+        <section class="order-panel" aria-labelledby="order-items-title">
+          <h2 id="order-items-title">Itens do pedido</h2>
+          <ul class="order-items">
+            @for (item of currentOrder.items; track $index) {
+              <li>
+                <strong>{{ item.name }}</strong>
+                <span>{{ item.quantity }} × {{ item.unitPriceGalleons }} = {{ item.lineTotalGalleons }} galeões</span>
+              </li>
+            }
+          </ul>
+        </section>
+
+        @if (currentOrder.address; as address) {
+          <section class="order-panel" aria-labelledby="order-address-title">
+            <h2 id="order-address-title">Endereço de entrega</h2>
+            <address>
+              {{ address.recipient }}<br>
+              {{ address.street }}, {{ address.number }}@if (address.complement) {, {{ address.complement }}}<br>
+              {{ address.district }} — {{ address.city }}/{{ address.state }}<br>
+              CEP {{ address.zipCode }}
+              @if (address.reference) { <br>Referência: {{ address.reference }} }
+            </address>
+          </section>
+        }
+      </div>
+    }
   }
 </main>

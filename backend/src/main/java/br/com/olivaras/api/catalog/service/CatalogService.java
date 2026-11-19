@@ -3,6 +3,7 @@ package br.com.olivaras.api.catalog.service;
 import br.com.olivaras.api.catalog.dto.CatalogItemResponse;
 import br.com.olivaras.api.catalog.entity.WandProductEntity;
 import br.com.olivaras.api.catalog.repository.WandProductRepository;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -39,6 +40,11 @@ public class CatalogService {
         WandProductEntity product = products.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item não encontrado"));
         return CatalogItemResponse.from(product);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CatalogItemResponse> related(UUID id) {
+        return products.findRelated(id).stream().map(CatalogItemResponse::from).toList();
     }
 
     private Pageable pageable(int page, int size) {

@@ -2,6 +2,7 @@ package br.com.olivaras.api.cart.controller;
 
 import br.com.olivaras.api.cart.dto.AddCartItemRequest;
 import br.com.olivaras.api.cart.dto.CartResponse;
+import br.com.olivaras.api.cart.dto.GuestCartTransferRequest;
 import br.com.olivaras.api.cart.dto.RemoveCartItemRequest;
 import br.com.olivaras.api.cart.dto.UpdateCartQuantityRequest;
 import br.com.olivaras.api.cart.service.CartService;
@@ -39,6 +40,13 @@ public class CartController {
         return carts.add(userId(jwt), request);
     }
 
+    @PostMapping("/merge")
+    @Operation(summary = "Transfere os itens de visitante respeitando o estoque e aceitando reenvios")
+    public GuestCartTransferResponse merge(@AuthenticationPrincipal Jwt jwt,
+                                           @Valid @RequestBody GuestCartTransferRequest request) {
+        return new GuestCartTransferResponse(carts.transferGuestCart(userId(jwt), request));
+    }
+
     @PostMapping("/remove")
     @Operation(summary = "Remove um produto do carrinho")
     public CartResponse remove(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody RemoveCartItemRequest request) {
@@ -66,4 +74,5 @@ public class CartController {
     private UUID userId(Jwt jwt) { return UUID.fromString(jwt.getSubject()); }
 
     public record CartTotalResponse(BigDecimal totalGalleons, int totalItems) {}
+    public record GuestCartTransferResponse(int skippedUnits) {}
 }

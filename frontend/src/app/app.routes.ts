@@ -52,6 +52,17 @@ export const routes: Routes = [
     loadComponent: () => import('./checkout-page/checkout-page').then((module) => module.CheckoutPage),
   },
   {
+    path: 'orders',
+    canActivate: [requireLogin, requireCustomer],
+    loadComponent: () => import('./orders-page/orders-page').then((module) => module.OrdersPage),
+  },
+  {
+    path: 'orders/:id/details',
+    canActivate: [requireLogin, requireCustomer],
+    data: { details: true },
+    loadComponent: () => import('./order-page/order-page').then((module) => module.OrderPage),
+  },
+  {
     path: 'orders/:id',
     canActivate: [requireLogin, requireCustomer],
     loadComponent: () => import('./order-page/order-page').then((module) => module.OrderPage),

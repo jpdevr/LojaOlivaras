@@ -1,0 +1,26 @@
+<article class="wand-product-card">
+  <app-wand-image class="wand-product-image" [name]="item().name" [imageUrl]="item().imageUrl" />
+  <button class="favorite-button" type="button"
+          [attr.aria-label]="favorite() ? 'Remover dos favoritos: ' + item().name : 'Favoritar: ' + item().name"
+          [attr.aria-pressed]="favorite()" [attr.aria-busy]="pendingFavorite()"
+          [disabled]="pendingFavorite()" (click)="toggleFavorite()">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 21 3.7 12.7a5.1 5.1 0 0 1 7.2-7.2l1.1 1.1 1.1-1.1a5.1 5.1 0 0 1 7.2 7.2Z" />
+    </svg>
+  </button>
+  <div class="wand-product-copy">
+    <h2>
+      <button class="wand-details-trigger" type="button" aria-haspopup="dialog" (click)="openDetails()">{{ item().name }}</button>
+    </h2>
+    <p class="wand-product-price">{{ item().priceGalleons }} <span>galeões</span></p>
+    <app-wand-stock [stock]="item().stock" />
+    <button class="add-to-cart-button etched-control" type="button" [disabled]="pendingCart() || !item().available"
+            (click)="addToCart()">
+      {{ pendingCart() ? 'Adicionando…' : 'Adicionar ao carrinho' }}
+    </button>
+    <span class="store-visually-hidden" role="status">{{ cartAnnouncement() }}</span>
+    @if (favoriteMessage(); as feedback) {
+      <p class="wand-action-status" role="status">{{ feedback }}</p>
+    }
+  </div>
+</article>

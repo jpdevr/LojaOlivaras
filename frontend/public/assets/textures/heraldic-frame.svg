@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" fill="none">
+  <defs>
+    <linearGradient id="metal" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#fff0be"/>
+      <stop offset=".32" stop-color="#c99745"/>
+      <stop offset=".56" stop-color="#69401c"/>
+      <stop offset=".76" stop-color="#edc77a"/>
+      <stop offset="1" stop-color="#a16c31"/>
+    </linearGradient>
+    <path id="outline" d="M35 5h170q4 22 30 30v170q-25 8-30 30H35q-5-22-30-30V35Q30 27 35 5Z"/>
+    <path id="inlay" d="M40 12H200q7 23 28 28v160q-21 6-28 28H40q-6-22-28-28V40q22-6 28-28Z"/>
+    <g id="mantling" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 49Q21 42 24 28Q30 18 43 20Q52 21 52 13Q48 7 43 13Q45 18 49 15M21 37Q32 40 39 33Q44 26 36 26Q31 27 33 31M22 34Q17 26 23 22Q28 18 30 23M8 56Q22 49 26 51" stroke="#24130c" stroke-width="5"/>
+      <path d="M7 49Q21 42 24 28Q30 18 43 20Q52 21 52 13Q48 7 43 13Q45 18 49 15M21 37Q32 40 39 33Q44 26 36 26Q31 27 33 31M22 34Q17 26 23 22Q28 18 30 23M8 56Q22 49 26 51" stroke="url(#metal)" stroke-width="2.4"/>
+      <path d="M11 44q1-11 10-12q-2 8-10 12Zm17-3q11-3 12 3q-6 4-12-3Zm8-21q-1-7 7-9q0 6-7 9Z" fill="url(#metal)" stroke="#56351a"/>
+      <path d="m13 14 3-6 3 6-3 6Z" fill="#f4d48d" stroke="#4a2b16"/>
+    </g>
+  </defs>
+  <use href="#outline" stroke="#1c110a" stroke-width="8"/>
+  <use href="#outline" stroke="url(#metal)" stroke-width="4"/>
+  <use href="#inlay" stroke="#1c110a" stroke-width="4"/>
+  <use href="#inlay" stroke="#d6ad61" stroke-width="1.5"/>
+  <use href="#mantling"/>
+  <use href="#mantling" transform="translate(240 0) scale(-1 1)"/>
+  <use href="#mantling" transform="translate(0 240) scale(1 -1)"/>
+  <use href="#mantling" transform="translate(240 240) scale(-1 -1)"/>
+</svg>

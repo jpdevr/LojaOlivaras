@@ -32,7 +32,7 @@ public class AddressService {
 
     @Transactional
     public AddressResponse create(UUID userId, AddressRequest request) {
-        UserEntity user = requireActiveUser(userId);
+        UserEntity user = lockActiveUser(userId);
         boolean makeDefault = Boolean.TRUE.equals(request.defaultAddress())
                 || !addresses.existsByUser_IdAndDefaultAddressTrue(userId);
         if (makeDefault) addresses.clearDefaultForUser(userId);
@@ -41,6 +41,7 @@ public class AddressService {
 
     @Transactional
     public AddressResponse replace(UUID userId, UUID addressId, AddressRequest request) {
+        lockActiveUser(userId);
         AddressEntity address = ownedAddress(userId, addressId);
         boolean makeDefault = request.defaultAddress() == null
                 ? address.isDefaultAddress() : request.defaultAddress();
@@ -51,6 +52,7 @@ public class AddressService {
 
     @Transactional
     public void delete(UUID userId, UUID addressId) {
+        lockActiveUser(userId);
         AddressEntity address = ownedAddress(userId, addressId);
         boolean wasDefault = address.isDefaultAddress();
         addresses.delete(address);
@@ -64,13 +66,27 @@ public class AddressService {
         }
     }
 
+    @Transactional
+    public AddressResponse makeDefault(UUID userId, UUID addressId) {
+        lockActiveUser(userId);
+        AddressEntity address = ownedAddress(userId, addressId);
+        if (address.isDefaultAddress()) return AddressResponse.from(address);
+        addresses.clearDefaultForUser(userId);
+        address.setDefaultAddress(true);
+        return AddressResponse.from(addresses.saveAndFlush(address));
+    }
+
+    private UserEntity lockActiveUser(UUID userId) {
+        return users.findActiveByIdForUpdate(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil não encontrado"));
+    }
+
     private UserEntity requireActiveUser(UUID userId) {
         return users.findByIdAndActiveTrue(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil não encontrado"));
     }
 
     private AddressEntity ownedAddress(UUID userId, UUID addressId) {
-        requireActiveUser(userId);
         return addresses.findByIdAndUser_Id(addressId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Endereço não encontrado"));
     }

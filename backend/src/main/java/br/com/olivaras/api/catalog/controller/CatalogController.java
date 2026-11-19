@@ -5,6 +5,7 @@ import br.com.olivaras.api.catalog.service.CatalogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -46,4 +47,8 @@ public class CatalogController {
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Consulta os detalhes de uma varinha pelo UUID")
     public CatalogItemResponse detail(@PathVariable UUID id) { return catalog.detail(id); }
+
+    @GetMapping("/item-detail/{id}/related")
+    @Operation(summary = "Lista até três varinhas com características em comum")
+    public List<CatalogItemResponse> related(@PathVariable UUID id) { return catalog.related(id); }
 }

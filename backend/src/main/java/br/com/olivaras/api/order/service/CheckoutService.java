@@ -81,7 +81,14 @@ public class CheckoutService {
         AddressEntity address = addresses.findByIdAndUser_Id(request.addressId(), userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Endereço não encontrado"));
         List<CartItemEntity> lines = cartItems.findAllByCart_IdOrderByProduct_NameAsc(cart.getId());
-        if (lines.isEmpty()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Carrinho vazio");
+        if (request.itemIds() != null) {
+            var selected = new java.util.HashSet<>(request.itemIds());
+            lines = lines.stream().filter(line -> selected.contains(line.getProduct().getId())).toList();
+            if (lines.size() != selected.size()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "A seleção mudou. Revise seu carrinho.");
+            }
+        }
+        if (lines.isEmpty()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Selecione itens no carrinho");
 
         List<UUID> productIds = lines.stream().map(line -> line.getProduct().getId()).distinct().sorted().toList();
         List<WandProductEntity> lockedProducts = products.findActiveByIdsForUpdate(productIds);
@@ -115,7 +122,7 @@ public class CheckoutService {
         }
         products.flush();
         orderItems.flush();
-        cartItems.deleteAllByCart_Id(cart.getId());
+        cartItems.deleteAll(lines);
         cartItems.flush();
 
         return response(order);

@@ -1,26 +1,24 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Observable, finalize, map } from 'rxjs';
 import { CatalogItem, CatalogService } from '../core/catalog.service';
 import { AuthService } from '../core/auth.service';
-import { CartService } from '../core/cart.service';
 import { WishlistService } from '../core/wishlist.service';
 import { StoreNavigation } from '../shared/store-navigation';
 
+import { WandCard } from '../shared/wand-card';
+
 @Component({
   selector: 'app-catalog-page',
-  imports: [FormsModule, StoreNavigation],
+  imports: [FormsModule, StoreNavigation, WandCard],
   templateUrl: './catalog-page.html',
 })
 export class CatalogPage {
   private readonly catalog = inject(CatalogService);
   private readonly auth = inject(AuthService);
-  private readonly cart = inject(CartService);
   private readonly wishlist = inject(WishlistService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly items = signal<CatalogItem[]>([]);
@@ -29,11 +27,7 @@ export class CatalogPage {
   readonly query = signal('');
   readonly currentPage = signal(0);
   readonly totalPages = signal(0);
-  readonly favoriteIds = this.wishlist.favoriteIds;
-  readonly pendingFavorites = signal<ReadonlySet<string>>(new Set());
   readonly wishlistMessage = signal<string | null>(null);
-  readonly pendingCartItems = signal<ReadonlySet<string>>(new Set());
-  readonly cartMessage = signal<string | null>(null);
   readonly canShop = computed(() => this.auth.getCurrentUser()()?.role === 'CUSTOMER');
 
   minPrice: number | null = null;
@@ -109,70 +103,6 @@ export class CatalogPage {
     this.selectedMaker = '';
     this.selectedTier = '';
     this.onlyAvailable = false;
-  }
-
-  toggleFavorite(itemId: string): void {
-    if (!this.canShop()) {
-      void this.router.navigate(['/login'], { queryParams: { returnUrl: '/catalogo' } });
-      return;
-    }
-    if (this.pendingFavorites().has(itemId)) return;
-    this.pendingFavorites.update((ids) => new Set(ids).add(itemId));
-    this.wishlistMessage.set(null);
-
-    let request: Observable<void>;
-    if (this.favoriteIds().has(itemId)) {
-      request = this.wishlist.remove(itemId).pipe(map(() => undefined));
-    } else {
-      request = this.wishlist.add(itemId).pipe(map(() => undefined));
-    }
-
-    request.pipe(
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => this.pendingFavorites.update((ids) => {
-        const next = new Set(ids);
-        next.delete(itemId);
-        return next;
-      })),
-    ).subscribe({
-      error: () => this.wishlistMessage.set('Não foi possível atualizar a wishlist. Tente novamente.'),
-    });
-  }
-
-  addToCart(item: CatalogItem): void {
-    const itemId = item.id;
-    if (this.pendingCartItems().has(itemId)) return;
-    this.pendingCartItems.update((ids) => new Set(ids).add(itemId));
-    this.cartMessage.set(null);
-    this.cart.add(itemId, 1, item).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => this.pendingCartItems.update((ids) => {
-        const next = new Set(ids);
-        next.delete(itemId);
-        return next;
-      })),
-    ).subscribe({
-      next: () => this.cartMessage.set('Varinha adicionada ao carrinho.'),
-      error: () => this.cartMessage.set('Não foi possível adicionar a varinha ao carrinho.'),
-    });
-  }
-
-  productRows(): CatalogItem[][] {
-    const items = this.visibleProducts();
-    const rows: CatalogItem[][] = [];
-    for (let index = 0; index < items.length; index += 4) {
-      rows.push(items.slice(index, index + 4));
-    }
-    return rows;
-  }
-
-  tierName(tier: string): string {
-    const labels: Record<string, string> = {
-      BOOKS: 'Livros',
-      OFFICIAL_SUPPLEMENTAL: 'Material oficial complementar',
-      FILM_PRODUCTION: 'Produção cinematográfica',
-    };
-    return labels[tier] ?? tier;
   }
 
   private options(selector: (item: CatalogItem) => string | null): string[] {

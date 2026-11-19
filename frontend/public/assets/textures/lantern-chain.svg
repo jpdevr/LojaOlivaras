@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="12" height="26" viewBox="0 0 12 26">
+  <defs>
+    <linearGradient id="chain-metal">
+      <stop stop-color="#2b170c"/>
+      <stop offset=".49" stop-color="#d5aa62"/>
+      <stop offset=".66" stop-color="#906032"/>
+      <stop offset="1" stop-color="#2b170c"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="6" cy="6.5" rx="3.1" ry="6" fill="none" stroke="#2b170c" stroke-width="3.1"/>
+  <ellipse cx="6" cy="6.5" rx="3.1" ry="6" fill="none" stroke="url(#chain-metal)" stroke-width="1.9"/>
+  <ellipse cx="6" cy="19.5" rx="1.8" ry="6" fill="none" stroke="#2b170c" stroke-width="3"/>
+  <ellipse cx="6" cy="19.5" rx="1.8" ry="6" fill="none" stroke="url(#chain-metal)" stroke-width="1.7"/>
+</svg>

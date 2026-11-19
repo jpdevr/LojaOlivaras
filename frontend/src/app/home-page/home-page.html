@@ -1,7 +1,39 @@
-<app-store-navigation />
+<div class="home-stage">
+  <app-store-navigation [showHouseRibbon]="true" />
 
-<main>
-  <h1>Bem-vindo à Loja Olivaras</h1>
-  <p>{{ user() ? 'Olá, ' + user()!.profileName + '. ' : '' }}Encontre a varinha que escolheu você.</p>
-  <p>Explore o catálogo ou pesquise pelo nome de uma varinha ou personagem.</p>
-</main>
+  <main class="home-page page-shell">
+  <section class="home-hero arch-frame" aria-labelledby="home-title">
+    <div class="hero-copy">
+      <h1 id="home-title"><app-store-wordmark /></h1>
+      <p class="hero-intro">
+        {{ user() ? 'Olá, ' + user()!.profileName + '. ' : '' }}Encontre a varinha que escolheu você.
+      </p>
+      <a class="button-link etched-control" routerLink="/catalogo">Explorar varinhas <span aria-hidden="true">✦</span></a>
+    </div>
+    <span class="hero-spark hero-spark-one" aria-hidden="true">✧</span>
+    <span class="hero-spark hero-spark-two" aria-hidden="true">✦</span>
+    <span class="hero-spark hero-spark-three" aria-hidden="true">✧</span>
+  </section>
+
+  <section class="featured-section" aria-labelledby="featured-title">
+    <div class="section-heading">
+      <span class="heading-rule" aria-hidden="true"></span>
+      <h2 id="featured-title" class="etched-control">Varinhas à sua espera</h2>
+      <span class="heading-rule" aria-hidden="true"></span>
+    </div>
+
+    @if (favoritesError()) {
+      <p role="status">Não foi possível carregar seus favoritos.</p>
+    }
+    @if (featuredWands().length > 0) {
+      <div class="featured-grid">
+        @for (item of featuredWands(); track item.id) {
+          <app-wand-card [item]="item" />
+        }
+      </div>
+    }
+
+    <a class="catalog-more etched-control" routerLink="/catalogo">Ver todas as varinhas <span aria-hidden="true">✦</span></a>
+  </section>
+  </main>
+</div>

@@ -21,7 +21,7 @@ public interface StoreOrderRepository extends JpaRepository<StoreOrderEntity, UU
             set payment_status = 'SIMULATED_APPROVED',
                 status = 'PROCESSING',
                 paid_at = :now,
-                estimated_delivery_at = :now + interval '1 day'
+                estimated_delivery_at = CAST(:now AS timestamptz) + interval '1 day'
             where payment_status = 'PENDING'
               and payment_expires_at <= :now
             """, nativeQuery = true)

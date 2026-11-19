@@ -93,8 +93,8 @@ export class CheckoutService {
     return this.http.get<CheckoutAddress[]>(`${this.checkoutUrl}/addresses`);
   }
 
-  confirm(addressId: string, paymentMethod: PaymentMethod): Observable<OrderResponse> {
-    return this.http.post<OrderResponse>(`${this.checkoutUrl}/confirm`, { addressId, paymentMethod });
+  confirm(addressId: string, paymentMethod: PaymentMethod, itemIds: string[]): Observable<OrderResponse> {
+    return this.http.post<OrderResponse>(`${this.checkoutUrl}/confirm`, { addressId, paymentMethod, itemIds });
   }
 
   getOrder(orderId: string): Observable<OrderResponse> {

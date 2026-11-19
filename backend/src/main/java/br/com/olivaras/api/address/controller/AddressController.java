@@ -57,5 +57,11 @@ public class AddressController {
         addresses.delete(userId(jwt), addressId);
     }
 
+    @PostMapping("/default/{addressId}")
+    @Operation(summary = "Define um endereço próprio como padrão")
+    public AddressResponse makeDefault(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID addressId) {
+        return addresses.makeDefault(userId(jwt), addressId);
+    }
+
     private UUID userId(Jwt jwt) { return UUID.fromString(jwt.getSubject()); }
 }

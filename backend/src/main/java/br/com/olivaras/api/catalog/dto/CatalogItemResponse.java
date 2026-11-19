@@ -19,12 +19,13 @@ public record CatalogItemResponse(
         String sourceReference,
         BigDecimal priceGalleons,
         boolean available,
+        int stock,
         String imageUrl) {
 
     public static CatalogItemResponse from(WandProductEntity item) {
         return new CatalogItemResponse(item.getId(), item.getSlug(), item.getName(), item.getOwnerName(),
                 item.getWood(), item.getCore(), item.getLengthInches(), item.getFlexibility(), item.getMaker(),
                 item.getDescription(), item.getCanonTier(), item.getSourceReference(), item.getPriceGalleons(),
-                item.getStock() > 0, item.getImageUrl());
+                item.getStock() > 0, item.getStock(), item.getImageUrl());
     }
 }

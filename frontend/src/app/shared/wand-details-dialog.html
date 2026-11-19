@@ -1,0 +1,56 @@
+<dialog #dialog class="wand-dialog" aria-labelledby="wand-dialog-title"
+        (cancel)="closeOnCancel($event)" (click)="closeOnBackdrop($event)">
+  <div class="wand-dialog-frame arch-frame">
+    <header class="wand-dialog-header">
+      <h2 id="wand-dialog-title">{{ wand()?.name ?? 'Detalhes da varinha' }}</h2>
+      <button #closeButton class="wand-dialog-close" type="button" aria-label="Fechar detalhes" autofocus (click)="close()">×</button>
+    </header>
+
+    @if (failed()) {
+      <p role="alert">Não foi possível carregar os detalhes desta varinha.</p>
+    } @else if (wand(); as item) {
+      <div class="wand-dialog-layout" [class.with-related]="related().length > 0">
+        <div class="wand-dialog-main">
+          <app-wand-image class="wand-product-image" [name]="item.name" [imageUrl]="item.imageUrl" />
+          <div class="wand-dialog-offer">
+            <strong class="wand-product-price">{{ item.priceGalleons }} <span>galeões</span></strong>
+            <app-wand-stock [stock]="item.stock" />
+            <button type="button" class="add-to-cart-button etched-control" [disabled]="!item.available || adding()"
+                    (click)="addToCart(item)">{{ adding() ? 'Adicionando…' : 'Adicionar ao carrinho' }}</button>
+          </div>
+          <span class="store-visually-hidden" role="status">{{ cartMessage() }}</span>
+          <p class="wand-description">{{ item.description }}</p>
+
+          <dl class="wand-specifications">
+            <div><dt>Madeira</dt><dd>{{ item.wood || 'Não informada' }}</dd></div>
+            <div><dt>Núcleo</dt><dd>{{ item.core || 'Não informado' }}</dd></div>
+            <div><dt>Tamanho</dt><dd>{{ item.lengthInches == null ? 'Não informado' : formatLength(item.lengthInches) + ' polegadas' }}</dd></div>
+            <div><dt>Flexibilidade</dt><dd>{{ item.flexibility || 'Não informada' }}</dd></div>
+            <div><dt>Fabricante</dt><dd>{{ item.maker || 'Não informado' }}</dd></div>
+            <div><dt>Proprietário</dt><dd>{{ item.ownerName || 'Não informado' }}</dd></div>
+            <div><dt>Origem da informação</dt><dd>{{ originLabels[item.canonTier] ?? item.canonTier }}</dd></div>
+            <div><dt>Referência</dt><dd><a [href]="item.sourceReference" target="_blank" rel="noopener noreferrer">Consultar fonte</a></dd></div>
+          </dl>
+        </div>
+
+        @if (related().length) {
+          <aside class="wand-related arch-frame" aria-labelledby="wand-related-title">
+            <h3 id="wand-related-title">Varinhas relacionadas</h3>
+            <ul>
+              @for (other of related(); track other.id) {
+                <li>
+                  <button class="wand-related-item" type="button" (click)="openRelated(other.id)">
+                    <app-wand-image class="wand-product-image" [name]="other.name" [imageUrl]="other.imageUrl" />
+                    <span>{{ other.name }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </aside>
+        }
+      </div>
+    } @else {
+      <p role="status">Carregando detalhes…</p>
+    }
+  </div>
+</dialog>

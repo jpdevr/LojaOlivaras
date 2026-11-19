@@ -1,10 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { CheckoutService, OrderResponse } from '../core/checkout.service';
+import { Router } from '@angular/router';
 import { Address, AddressRequest, ProfileService } from '../core/profile.service';
 import { AuthService } from '../core/auth.service';
 import { CepLookupService } from '../core/cep-lookup.service';
@@ -13,21 +11,22 @@ import { StoreNavigation } from '../shared/store-navigation';
 function emptyAddress(): AddressRequest {
   return {
     label: '', recipient: '', zipCode: '', street: '', number: '', complement: '',
-    district: '', city: '', state: '', reference: '', defaultAddress: false,
+    district: '', city: '', state: '', reference: '', defaultAddress: null,
   };
 }
 
 @Component({
   selector: 'app-profile-page',
-  imports: [DatePipe, FormsModule, RouterLink, StoreNavigation],
+  imports: [FormsModule, StoreNavigation],
   templateUrl: './profile-page.html',
 })
 export class ProfilePage {
   private readonly profile = inject(ProfileService);
-  private readonly checkout = inject(CheckoutService);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly cepLookup = inject(CepLookupService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly addressRecipient = viewChild.required<ElementRef<HTMLInputElement>>('addressRecipient');
 
   readonly user = this.auth.getCurrentUser();
   readonly loadingProfile = signal(true);
@@ -40,12 +39,13 @@ export class ProfilePage {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly addressError = signal<string | null>(null);
+  readonly addressListError = signal<string | null>(null);
   readonly addresses = signal<Address[]>([]);
   readonly editingAddressId = signal<string | null>(null);
-  readonly pendingAddressDeletes = signal<ReadonlySet<string>>(new Set());
-  readonly orders = signal<OrderResponse[]>([]);
-  readonly loadingOrders = signal(true);
-  readonly ordersError = signal<string | null>(null);
+  readonly deletingAddressId = signal<string | null>(null);
+  readonly pendingDefaultId = signal<string | null>(null);
+  readonly addressBusy = computed(() => this.savingAddress() || this.loadingAddresses()
+    || this.deletingAddressId() !== null || this.pendingDefaultId() !== null || this.lookingUpCep());
 
   profileForm = { profileName: '', phone: '' };
   passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -54,7 +54,6 @@ export class ProfilePage {
   constructor() {
     this.loadProfile();
     this.loadAddresses();
-    this.loadOrders();
   }
 
   loadProfile(): void {
@@ -110,9 +109,12 @@ export class ProfilePage {
       newPassword: this.passwordForm.newPassword,
     }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
-        this.successMessage.set('Senha alterada com sucesso.');
-        this.changingPassword.set(false);
+        this.auth.clearSession();
+        void this.router.navigate(['/login'], {
+          queryParams: { returnUrl: '/profile' },
+          state: { passwordChanged: true },
+          replaceUrl: true,
+        });
       },
       error: (error: unknown) => {
         this.errorMessage.set(this.errorText(error, 'Não foi possível alterar a senha.'));
@@ -123,44 +125,17 @@ export class ProfilePage {
 
   loadAddresses(): void {
     this.loadingAddresses.set(true);
-    this.addressError.set(null);
+    this.addressListError.set(null);
     this.profile.listAddresses().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (addresses) => {
         this.addresses.set(addresses);
         this.loadingAddresses.set(false);
       },
       error: (error: unknown) => {
-        this.addressError.set(this.errorText(error, 'Não foi possível carregar os endereços.'));
+        this.addressListError.set(this.errorText(error, 'Não foi possível carregar os endereços.'));
         this.loadingAddresses.set(false);
       },
     });
-  }
-
-  loadOrders(): void {
-    this.loadingOrders.set(true);
-    this.ordersError.set(null);
-    this.checkout.listOrders().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (page) => {
-        this.orders.set(page.content);
-        this.loadingOrders.set(false);
-      },
-      error: (error: unknown) => {
-        this.ordersError.set(this.errorText(error, 'Não foi possível carregar o histórico de pedidos.'));
-        this.loadingOrders.set(false);
-      },
-    });
-  }
-
-  orderStatusName(status: string): string {
-    return ({ CONFIRMED: 'Confirmado', PROCESSING: 'Em preparação', DELIVERED: 'Entregue' })[status] ?? status;
-  }
-
-  paymentStatusName(status: string): string {
-    return ({ PENDING: 'Aguardando simulação', SIMULATED_APPROVED: 'Aprovado (simulação)' })[status] ?? status;
-  }
-
-  paymentMethodName(method: string): string {
-    return ({ PIX: 'PIX', BOLETO: 'Boleto', CREDIT_CARD: 'Cartão', LEGACY: 'Pedido antigo' })[method] ?? method;
   }
 
   editAddress(address: Address): void {
@@ -176,15 +151,18 @@ export class ProfilePage {
       city: address.city,
       state: address.state,
       reference: address.reference ?? '',
-      defaultAddress: address.defaultAddress,
+      defaultAddress: null,
     };
     this.addressError.set(null);
+    this.cepMessage.set(null);
+    this.addressRecipient().nativeElement.focus();
   }
 
   cancelAddressEdit(): void {
     this.editingAddressId.set(null);
     this.addressForm = emptyAddress();
     this.addressError.set(null);
+    this.cepMessage.set(null);
   }
 
   isCepLookupDisabled(): boolean {
@@ -229,7 +207,7 @@ export class ProfilePage {
   }
 
   saveAddress(): void {
-    if (this.savingAddress()) return;
+    if (this.addressBusy()) return;
     this.savingAddress.set(true);
     this.addressError.set(null);
     const editingId = this.editingAddressId();
@@ -248,7 +226,7 @@ export class ProfilePage {
       next: (address) => {
         this.addresses.update((addresses) => editingId
           ? addresses.map((saved) => saved.id === address.id ? address : saved)
-          : [...addresses, address]);
+          : [address, ...addresses]);
         this.cancelAddressEdit();
         this.savingAddress.set(false);
       },
@@ -260,26 +238,36 @@ export class ProfilePage {
   }
 
   deleteAddress(address: Address): void {
-    if (this.pendingAddressDeletes().has(address.id)) return;
-    this.pendingAddressDeletes.update((ids) => new Set(ids).add(address.id));
-    this.addressError.set(null);
+    if (this.addressBusy()) return;
+    this.deletingAddressId.set(address.id);
+    this.addressListError.set(null);
     this.profile.deleteAddress(address.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.addresses.update((addresses) => addresses.filter((saved) => saved.id !== address.id));
         if (this.editingAddressId() === address.id) this.cancelAddressEdit();
-        this.pendingAddressDeletes.update((ids) => {
-          const next = new Set(ids);
-          next.delete(address.id);
-          return next;
-        });
+        if (address.defaultAddress) this.loadAddresses();
+        this.deletingAddressId.set(null);
       },
       error: (error: unknown) => {
-        this.addressError.set(this.errorText(error, 'Não foi possível remover o endereço.'));
-        this.pendingAddressDeletes.update((ids) => {
-          const next = new Set(ids);
-          next.delete(address.id);
-          return next;
-        });
+        this.addressListError.set(this.errorText(error, 'Não foi possível remover o endereço.'));
+        this.deletingAddressId.set(null);
+      },
+    });
+  }
+
+  makeDefault(address: Address): void {
+    if (this.addressBusy() || address.defaultAddress) return;
+    this.pendingDefaultId.set(address.id);
+    this.addressListError.set(null);
+    this.profile.makeDefaultAddress(address.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => {
+        this.addresses.update((addresses) => addresses.map((saved) =>
+          saved.id === updated.id ? updated : { ...saved, defaultAddress: false }));
+        this.pendingDefaultId.set(null);
+      },
+      error: (error: unknown) => {
+        this.addressListError.set(this.errorText(error, 'Não foi possível definir o endereço padrão.'));
+        this.pendingDefaultId.set(null);
       },
     });
   }

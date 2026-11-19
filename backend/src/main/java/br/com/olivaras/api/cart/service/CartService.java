@@ -5,6 +5,7 @@ import br.com.olivaras.api.auth.repository.UserRepository;
 import br.com.olivaras.api.cart.dto.AddCartItemRequest;
 import br.com.olivaras.api.cart.dto.CartLineResponse;
 import br.com.olivaras.api.cart.dto.CartResponse;
+import br.com.olivaras.api.cart.dto.GuestCartTransferRequest;
 import br.com.olivaras.api.cart.dto.RemoveCartItemRequest;
 import br.com.olivaras.api.cart.dto.UpdateCartQuantityRequest;
 import br.com.olivaras.api.cart.entity.CartItemEntity;
@@ -17,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,13 +29,15 @@ public class CartService {
     private final ShoppingCartRepository carts;
     private final CartItemRepository items;
     private final WandProductRepository products;
+    private final JdbcTemplate jdbc;
 
     public CartService(UserRepository users, ShoppingCartRepository carts,
-                       CartItemRepository items, WandProductRepository products) {
+                       CartItemRepository items, WandProductRepository products, JdbcTemplate jdbc) {
         this.users = users;
         this.carts = carts;
         this.items = items;
         this.products = products;
+        this.jdbc = jdbc;
     }
 
     @Transactional(readOnly = true)
@@ -55,6 +59,35 @@ public class CartService {
         else line.setQuantity(newQuantity);
         items.saveAndFlush(line);
         return get(userId);
+    }
+
+    @Transactional
+    public int transferGuestCart(UUID userId, GuestCartTransferRequest request) {
+        ShoppingCartEntity cart = lockedOrCreateCart(userId);
+        List<Integer> previous = jdbc.queryForList(
+                "SELECT skipped_units FROM guest_cart_transfer WHERE cart_id = ? AND transfer_id = ?",
+                Integer.class, cart.getId(), request.transferId());
+        if (!previous.isEmpty()) return previous.getFirst();
+
+        int skipped = 0;
+        for (AddCartItemRequest entry : request.items()) {
+            WandProductEntity product = products.findByIdAndActiveTrue(entry.itemId()).orElse(null);
+            if (product == null) {
+                skipped += entry.quantity();
+                continue;
+            }
+            CartItemEntity line = items.findByCart_IdAndProduct_Id(cart.getId(), product.getId()).orElse(null);
+            int current = line == null ? 0 : line.getQuantity();
+            int accepted = Math.min(entry.quantity(), Math.max(0, Math.min(99, product.getStock()) - current));
+            skipped += entry.quantity() - accepted;
+            if (accepted == 0) continue;
+            if (line == null) line = new CartItemEntity(cart, product, accepted);
+            else line.setQuantity(current + accepted);
+            items.save(line);
+        }
+        jdbc.update("INSERT INTO guest_cart_transfer (cart_id, transfer_id, skipped_units) VALUES (?, ?, ?)",
+                cart.getId(), request.transferId(), skipped);
+        return skipped;
     }
 
     @Transactional

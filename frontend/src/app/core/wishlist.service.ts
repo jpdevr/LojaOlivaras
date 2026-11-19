@@ -11,6 +11,7 @@ export interface WishlistItem {
   lengthInches: number | null;
   priceGalleons: number;
   available: boolean;
+  stock: number;
   imageUrl: string | null;
   addedAt: string;
 }
@@ -47,7 +48,7 @@ export class WishlistService {
 
   remove(itemId: string): Observable<WishlistResponse> {
     return this.http.post<WishlistResponse>(`${this.wishlistUrl}/remove`, { itemId }).pipe(
-      tap((response) => this.setItems(response.items)),
+      tap(() => this.setItems(this.items().filter((item) => item.itemId !== itemId))),
     );
   }
 

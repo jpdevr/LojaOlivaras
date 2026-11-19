@@ -1,100 +1,123 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { Observable, finalize } from 'rxjs';
+import { AuthService } from '../core/auth.service';
 import { CartItem, CartResponse, CartService } from '../core/cart.service';
 import { StoreNavigation } from '../shared/store-navigation';
+import { WandImage } from '../shared/wand-image';
 
 @Component({
   selector: 'app-cart-page',
-  imports: [RouterLink, StoreNavigation],
+  imports: [RouterLink, StoreNavigation, WandImage],
   templateUrl: './cart-page.html',
 })
 export class CartPage {
   private readonly cartService = inject(CartService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly uncheckedIds = signal<ReadonlySet<string>>(new Set());
 
   readonly cart = signal<CartResponse | null>(null);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly pendingItems = signal<ReadonlySet<string>>(new Set());
-  readonly clearing = signal(false);
+  readonly working = signal(false);
+  readonly isCustomer = computed(() => this.auth.getCurrentUser()()?.role === 'CUSTOMER');
+  readonly transferNotice = this.cartService.transferNotice;
+  readonly transferNeedsRetry = this.cartService.transferNeedsRetry;
+  readonly availableItems = computed(() => this.cart()?.items.filter((item) => item.available) ?? []);
+  readonly selectedItems = computed(() => this.availableItems().filter((item) => this.isSelected(item)));
+  readonly selectedQuantity = computed(() => this.selectedItems().reduce((total, item) => total + item.quantity, 0));
+  readonly selectedTotal = computed(() => this.selectedItems().reduce((total, item) => total + item.lineTotalGalleons, 0));
+  readonly allSelected = computed(() => this.availableItems().length > 0
+    && this.selectedItems().length === this.availableItems().length);
 
   constructor() { this.loadCart(); }
 
   loadCart(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
-    this.cartService.getCart().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (cart) => {
-        this.cart.set(cart);
-        this.loading.set(false);
-      },
-      error: (error: unknown) => {
-        this.errorMessage.set(this.errorText(error, 'Não foi possível carregar seu carrinho.'));
-        this.loading.set(false);
-      },
+    this.cartService.getCart().pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.loading.set(false)),
+    ).subscribe({
+      next: (cart) => this.cart.set(cart),
+      error: (error: unknown) => this.showError(error, 'Não foi possível carregar seu carrinho.'),
     });
   }
 
-  updateQuantity(item: CartItem, event: Event): void {
-    const quantity = Number((event.target as HTMLInputElement).value);
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
-      this.errorMessage.set('A quantidade deve ser um número entre 1 e 99.');
-      return;
-    }
-    this.mutate(item.itemId, this.cartService.updateQuantity(item.itemId, quantity));
+  isSelected(item: CartItem): boolean {
+    return item.available && !this.uncheckedIds().has(item.itemId);
+  }
+
+  toggleItem(item: CartItem): void {
+    if (!item.available) return;
+    const next = new Set(this.uncheckedIds());
+    if (next.has(item.itemId)) next.delete(item.itemId);
+    else next.add(item.itemId);
+    this.uncheckedIds.set(next);
+  }
+
+  toggleAll(): void {
+    this.uncheckedIds.set(this.allSelected()
+      ? new Set(this.availableItems().map((item) => item.itemId))
+      : new Set());
+  }
+
+  changeQuantity(item: CartItem, delta: number): void {
+    const quantity = item.quantity + delta;
+    if (quantity < 1 || quantity > 99) return;
+    this.mutate(() => this.cartService.updateQuantity(item.itemId, quantity));
   }
 
   remove(item: CartItem): void {
-    this.mutate(item.itemId, this.cartService.remove(item.itemId));
+    this.mutate(() => this.cartService.remove(item.itemId));
   }
 
   clear(): void {
-    if (this.clearing()) return;
-    this.clearing.set(true);
-    this.errorMessage.set(null);
-    this.cartService.clear().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (cart) => {
-        this.cart.set(cart);
-        this.clearing.set(false);
-      },
-      error: (error: unknown) => {
-        this.errorMessage.set(this.errorText(error, 'Não foi possível esvaziar o carrinho.'));
-        this.clearing.set(false);
-      },
+    this.mutate(() => this.cartService.clear());
+  }
+
+  retryTransfer(): void {
+    if (this.working()) return;
+    this.working.set(true);
+    this.cartService.mergeGuestCart().pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.working.set(false)),
+    ).subscribe({
+      next: () => this.loadCart(),
+      error: () => { /* O serviço mantém os itens e atualiza o aviso de transferência. */ },
     });
   }
 
-  private mutate(itemId: string, request: import('rxjs').Observable<CartResponse>): void {
-    if (this.pendingItems().has(itemId)) return;
-    this.pendingItems.update((ids) => new Set(ids).add(itemId));
-    this.errorMessage.set(null);
-    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (cart) => {
-        this.cart.set(cart);
-        this.pendingItems.update((ids) => {
-          const next = new Set(ids);
-          next.delete(itemId);
-          return next;
-        });
-      },
-      error: (error: unknown) => {
-        this.errorMessage.set(this.errorText(error, 'Não foi possível atualizar o carrinho.'));
-        this.pendingItems.update((ids) => {
-          const next = new Set(ids);
-          next.delete(itemId);
-          return next;
-        });
-      },
+  continueCheckout(): void {
+    if (this.working() || !this.selectedItems().length) return;
+    void this.router.navigate(['/checkout'], {
+      queryParams: { item: this.selectedItems().map((item) => item.itemId) },
     });
   }
 
-  private errorText(error: unknown, fallback: string): string {
-    if (error instanceof HttpErrorResponse) {
-      const message = error.error?.message;
-      return typeof message === 'string' ? message : fallback;
-    }
-    return fallback;
+  private mutate(request: () => Observable<CartResponse>): void {
+    if (this.working()) return;
+    this.working.set(true);
+    this.errorMessage.set(null);
+    request().pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.working.set(false)),
+    ).subscribe({
+      next: (cart) => {
+        this.cart.set(cart);
+        const remainingIds = new Set(cart.items.map((item) => item.itemId));
+        this.uncheckedIds.update((ids) => new Set([...ids].filter((id) => remainingIds.has(id))));
+      },
+      error: (error: unknown) => this.showError(error, 'Não foi possível atualizar o carrinho.'),
+    });
+  }
+
+  private showError(error: unknown, fallback: string): void {
+    const message = error instanceof HttpErrorResponse ? error.error?.message : null;
+    this.errorMessage.set(typeof message === 'string' ? message : fallback);
   }
 }
