@@ -19,27 +19,25 @@ spring:
     enabled: true
   jackson:
     default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 16MB
 
 app:
+  catalog:
+    image-directory: ${WAND_IMAGE_DIRECTORY:./data/wand-images}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
   security:
     jwt-secret: ${JWT_SECRET:local-development-key-change-before-use-123456789}
     jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:30}
-  auth:
-    google:
-      enabled: ${GOOGLE_AUTH_ENABLED:false}
-      client-id: ${GOOGLE_CLIENT_ID:}
-  currency:
-    brl-per-galleon: ${EXCHANGE_BRL_PER_GALLEON:5.00}
-  zipcode:
-    provider: ${ZIP_CODE_PROVIDER:viacep}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health
 
 springdoc:
   swagger-ui:

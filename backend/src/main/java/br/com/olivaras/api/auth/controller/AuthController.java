@@ -1,6 +1,5 @@
 package br.com.olivaras.api.auth.controller;
 
-import br.com.olivaras.api.auth.dto.GoogleLoginRequest;
 import br.com.olivaras.api.auth.dto.LoginRequest;
 import br.com.olivaras.api.auth.dto.LoginResponse;
 import br.com.olivaras.api.auth.dto.RegisterRequest;
@@ -18,7 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/lojaolivaras/api/auth")
-@Tag(name = "Autenticação", description = "Cadastro e login por senha ou Google")
+@Tag(name = "Autenticação", description = "Cadastro e login por senha")
 public class AuthController {
     private final AuthService authService;
 
@@ -35,11 +34,5 @@ public class AuthController {
     @Operation(summary = "Autentica por e-mail e senha")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
-    }
-
-    @PostMapping("/google")
-    @Operation(summary = "Autentica com Google", description = "Recebe um Google ID token. No primeiro acesso, também exige nome de perfil, telefone e data de nascimento.")
-    public LoginResponse loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
-        return authService.loginWithGoogle(request);
     }
 }

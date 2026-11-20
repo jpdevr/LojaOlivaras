@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
@@ -7,6 +6,7 @@ import { EMPTY, catchError, switchMap, takeWhile, tap, timer } from 'rxjs';
 import { CheckoutService, OrderResponse } from '../core/checkout.service';
 import { orderLabels } from '../shared/order-labels';
 import { StoreNavigation } from '../shared/store-navigation';
+import { apiErrorMessage } from '../core/api';
 
 @Component({
   selector: 'app-order-page',
@@ -51,7 +51,7 @@ export class OrderPage {
 
         return this.checkout.getOrder(orderId).pipe(
           catchError((error: unknown) => {
-            this.errorMessage.set(this.errorText(error, 'Não foi possível carregar este pedido.'));
+            this.errorMessage.set(apiErrorMessage(error, 'Não foi possível carregar este pedido.'));
             this.loading.set(false);
             return EMPTY;
           }),
@@ -82,7 +82,7 @@ export class OrderPage {
     return timer(0, 5000).pipe(
       switchMap(() => this.checkout.getPaymentStatus(orderId).pipe(
         catchError((error: unknown) => {
-          this.statusError.set(this.errorText(error, 'Não foi possível atualizar o status do pedido.'));
+          this.statusError.set(apiErrorMessage(error, 'Não foi possível atualizar o status do pedido.'));
           return EMPTY;
         }),
       )),
@@ -102,7 +102,7 @@ export class OrderPage {
         link.click();
         URL.revokeObjectURL(url);
       },
-      error: (error: unknown) => this.statusError.set(this.errorText(error, 'Não foi possível baixar o boleto.')),
+      error: (error: unknown) => this.statusError.set(apiErrorMessage(error, 'Não foi possível baixar o boleto.')),
     });
   }
 
@@ -110,13 +110,5 @@ export class OrderPage {
     const minutes = Math.floor(seconds / 60);
     const remainder = seconds % 60;
     return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
-  }
-
-  private errorText(error: unknown, fallback: string): string {
-    if (error instanceof HttpErrorResponse) {
-      const message = error.error?.message;
-      return typeof message === 'string' ? message : fallback;
-    }
-    return fallback;
   }
 }

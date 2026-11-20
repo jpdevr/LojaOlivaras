@@ -2,6 +2,7 @@ package br.com.olivaras.api.catalog.dto;
 
 import br.com.olivaras.api.catalog.entity.WandProductEntity;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public record CatalogItemResponse(
@@ -20,12 +21,13 @@ public record CatalogItemResponse(
         BigDecimal priceGalleons,
         boolean available,
         int stock,
-        String imageUrl) {
+        String imageUrl,
+        List<String> imageUrls) {
 
     public static CatalogItemResponse from(WandProductEntity item) {
         return new CatalogItemResponse(item.getId(), item.getSlug(), item.getName(), item.getOwnerName(),
                 item.getWood(), item.getCore(), item.getLengthInches(), item.getFlexibility(), item.getMaker(),
                 item.getDescription(), item.getCanonTier(), item.getSourceReference(), item.getPriceGalleons(),
-                item.getStock() > 0, item.getStock(), item.getImageUrl());
+                item.getStock() > 0, item.getStock(), item.getImageUrl(), item.getImageUrls());
     }
 }

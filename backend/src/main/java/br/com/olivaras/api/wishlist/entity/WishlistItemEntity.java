@@ -37,7 +37,6 @@ public class WishlistItemEntity {
     void beforeInsert() { createdAt = Instant.now(); }
 
     public UUID getId() { return id; }
-    public UserEntity getUser() { return user; }
     public WandProductEntity getProduct() { return product; }
     public Instant getCreatedAt() { return createdAt; }
 }

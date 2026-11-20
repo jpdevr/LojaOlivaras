@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
@@ -7,6 +6,7 @@ import { AuthService } from '../core/auth.service';
 import { CartItem, CartResponse, CartService } from '../core/cart.service';
 import { StoreNavigation } from '../shared/store-navigation';
 import { WandImage } from '../shared/wand-image';
+import { apiErrorMessage } from '../core/api';
 
 @Component({
   selector: 'app-cart-page',
@@ -117,7 +117,6 @@ export class CartPage {
   }
 
   private showError(error: unknown, fallback: string): void {
-    const message = error instanceof HttpErrorResponse ? error.error?.message : null;
-    this.errorMessage.set(typeof message === 'string' ? message : fallback);
+    this.errorMessage.set(apiErrorMessage(error, fallback));
   }
 }

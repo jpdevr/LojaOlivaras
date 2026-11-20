@@ -272,7 +272,6 @@ p { margin: .65em 0; }
 
 .page-shell { width: min(calc(100% - 48px), 1440px); margin: 36px auto 80px; }
 .page-shell > h1 { margin: 10px 0 0; text-align: center; }
-.page-lede, .section-description { max-width: 820px; margin: 8px auto 27px; color: var(--ink-soft); text-align: center; font-size: 1.13rem; }
 .arch-frame {
   position: relative;
   border: 2px solid var(--gold);
@@ -310,7 +309,6 @@ p { margin: .65em 0; }
 .section-heading h2 { margin: 0; color: var(--wood); text-align: center; }
 .heading-rule { width: min(18vw, 210px); height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
 .heading-rule:last-child { transform: scaleX(-1); }
-.section-description { margin-bottom: 25px; }
 .featured-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 
 .catalog-more { display: flex; width: fit-content; gap: 10px; margin: 25px auto 0; padding: 7px 16px; color: var(--accent); font-size: 1.35rem; text-decoration: none; border-bottom: 1px solid var(--gold); }
@@ -353,7 +351,7 @@ input[type='checkbox'] + label, input[type='radio'] + label { margin-left: 5px; 
 
 .auth-page { max-width: 900px; }
 .auth-panel { max-width: 770px; margin: 10px auto; padding: 41px clamp(22px, 6vw, 68px); }
-.auth-panel > h1, .auth-panel > .page-lede { text-align: center; }
+.auth-panel > h1 { text-align: center; }
 
 .auth-form-section { max-width: 520px; margin: auto; }
 .auth-form-section h2 { color: var(--accent); }

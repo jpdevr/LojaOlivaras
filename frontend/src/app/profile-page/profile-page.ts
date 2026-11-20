@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +6,7 @@ import { Address, AddressRequest, ProfileService } from '../core/profile.service
 import { AuthService } from '../core/auth.service';
 import { CepLookupService } from '../core/cep-lookup.service';
 import { StoreNavigation } from '../shared/store-navigation';
+import { apiErrorMessage } from '../core/api';
 
 function emptyAddress(): AddressRequest {
   return {
@@ -65,7 +65,7 @@ export class ProfilePage {
         this.loadingProfile.set(false);
       },
       error: (error: unknown) => {
-        this.errorMessage.set(this.errorText(error, 'Não foi possível carregar seu perfil.'));
+        this.errorMessage.set(apiErrorMessage(error, 'Não foi possível carregar seu perfil.'));
         this.loadingProfile.set(false);
       },
     });
@@ -88,7 +88,7 @@ export class ProfilePage {
         this.savingProfile.set(false);
       },
       error: (error: unknown) => {
-        this.errorMessage.set(this.errorText(error, 'Não foi possível atualizar o perfil.'));
+        this.errorMessage.set(apiErrorMessage(error, 'Não foi possível atualizar o perfil.'));
         this.savingProfile.set(false);
       },
     });
@@ -117,7 +117,7 @@ export class ProfilePage {
         });
       },
       error: (error: unknown) => {
-        this.errorMessage.set(this.errorText(error, 'Não foi possível alterar a senha.'));
+        this.errorMessage.set(apiErrorMessage(error, 'Não foi possível alterar a senha.', 'newPassword'));
         this.changingPassword.set(false);
       },
     });
@@ -132,7 +132,7 @@ export class ProfilePage {
         this.loadingAddresses.set(false);
       },
       error: (error: unknown) => {
-        this.addressListError.set(this.errorText(error, 'Não foi possível carregar os endereços.'));
+        this.addressListError.set(apiErrorMessage(error, 'Não foi possível carregar os endereços.'));
         this.loadingAddresses.set(false);
       },
     });
@@ -231,7 +231,7 @@ export class ProfilePage {
         this.savingAddress.set(false);
       },
       error: (error: unknown) => {
-        this.addressError.set(this.errorText(error, 'Não foi possível salvar o endereço.'));
+        this.addressError.set(apiErrorMessage(error, 'Não foi possível salvar o endereço.'));
         this.savingAddress.set(false);
       },
     });
@@ -249,7 +249,7 @@ export class ProfilePage {
         this.deletingAddressId.set(null);
       },
       error: (error: unknown) => {
-        this.addressListError.set(this.errorText(error, 'Não foi possível remover o endereço.'));
+        this.addressListError.set(apiErrorMessage(error, 'Não foi possível remover o endereço.'));
         this.deletingAddressId.set(null);
       },
     });
@@ -266,17 +266,9 @@ export class ProfilePage {
         this.pendingDefaultId.set(null);
       },
       error: (error: unknown) => {
-        this.addressListError.set(this.errorText(error, 'Não foi possível definir o endereço padrão.'));
+        this.addressListError.set(apiErrorMessage(error, 'Não foi possível definir o endereço padrão.'));
         this.pendingDefaultId.set(null);
       },
     });
-  }
-
-  private errorText(error: unknown, fallback: string): string {
-    if (error instanceof HttpErrorResponse) {
-      const message = error.error?.message;
-      return typeof message === 'string' ? message : fallback;
-    }
-    return fallback;
   }
 }

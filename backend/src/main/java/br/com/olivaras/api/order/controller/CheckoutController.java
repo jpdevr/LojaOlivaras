@@ -1,6 +1,7 @@
 package br.com.olivaras.api.order.controller;
 
 import br.com.olivaras.api.address.dto.AddressResponse;
+import br.com.olivaras.api.address.service.AddressService;
 import br.com.olivaras.api.order.dto.CheckoutRequest;
 import br.com.olivaras.api.order.dto.OrderResponse;
 import br.com.olivaras.api.order.dto.PaymentStatusResponse;
@@ -32,8 +33,12 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Checkout e pedidos", description = "Finalização fictícia e consulta dos próprios pedidos")
 public class CheckoutController {
     private final CheckoutService checkout;
+    private final AddressService addresses;
 
-    public CheckoutController(CheckoutService checkout) { this.checkout = checkout; }
+    public CheckoutController(CheckoutService checkout, AddressService addresses) {
+        this.checkout = checkout;
+        this.addresses = addresses;
+    }
 
     @PostMapping("/confirm")
     @ResponseStatus(HttpStatus.CREATED)
@@ -45,7 +50,7 @@ public class CheckoutController {
     @GetMapping("/addresses")
     @Operation(summary = "Lista endereços próprios disponíveis para entrega")
     public List<AddressResponse> addresses(@AuthenticationPrincipal Jwt jwt) {
-        return checkout.checkoutAddresses(userId(jwt));
+        return addresses.list(userId(jwt));
     }
 
     @GetMapping("/order/{id}")

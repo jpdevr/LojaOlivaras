@@ -1,23 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { API_BASE_URL } from './api';
+import type { Address } from './profile.service';
 
 export type PaymentMethod = 'PIX' | 'BOLETO' | 'CREDIT_CARD';
-
-export interface CheckoutAddress {
-  id: string;
-  label: string | null;
-  recipient: string;
-  zipCode: string;
-  street: string;
-  number: string;
-  complement: string | null;
-  district: string;
-  city: string;
-  state: string;
-  reference: string | null;
-  defaultAddress: boolean;
-}
 
 export interface OrderLine {
   name: string;
@@ -86,15 +73,15 @@ export interface PageResponse<T> {
 @Injectable({ providedIn: 'root' })
 export class CheckoutService {
   private readonly http = inject(HttpClient);
-  private readonly checkoutUrl = 'http://localhost:8080/lojaolivaras/api/checkout';
-  private readonly ordersUrl = 'http://localhost:8080/lojaolivaras/api/profile/orders';
+  private readonly checkoutUrl = `${API_BASE_URL}/checkout`;
+  private readonly ordersUrl = `${API_BASE_URL}/profile/orders`;
 
-  listAddresses(): Observable<CheckoutAddress[]> {
-    return this.http.get<CheckoutAddress[]>(`${this.checkoutUrl}/addresses`);
+  listAddresses(): Observable<Address[]> {
+    return this.http.get<Address[]>(`${this.checkoutUrl}/addresses`);
   }
 
-  confirm(addressId: string, paymentMethod: PaymentMethod, itemIds: string[]): Observable<OrderResponse> {
-    return this.http.post<OrderResponse>(`${this.checkoutUrl}/confirm`, { addressId, paymentMethod, itemIds });
+  confirm(addressId: string, paymentMethod: PaymentMethod, cpf: string, itemIds: string[]): Observable<OrderResponse> {
+    return this.http.post<OrderResponse>(`${this.checkoutUrl}/confirm`, { addressId, paymentMethod, cpf, itemIds });
   }
 
   getOrder(orderId: string): Observable<OrderResponse> {

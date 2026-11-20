@@ -41,7 +41,7 @@ public interface StoreOrderRepository extends JpaRepository<StoreOrderEntity, UU
             update StoreOrderEntity o set o.recipient = 'Conta excluída', o.zipCode = '00000000',
                 o.street = 'Dados removidos', o.streetNumber = 's/n', o.complement = null,
                 o.district = 'Dados removidos', o.city = 'Dados removidos', o.state = '--',
-                o.deliveryReference = null
+                o.deliveryReference = null, o.customerCpf = null
             where o.customer.id = :customerId
             """)
     int anonymizeShippingData(@Param("customerId") UUID customerId);

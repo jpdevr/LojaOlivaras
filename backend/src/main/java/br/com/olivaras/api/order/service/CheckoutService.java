@@ -1,6 +1,5 @@
 package br.com.olivaras.api.order.service;
 
-import br.com.olivaras.api.address.dto.AddressResponse;
 import br.com.olivaras.api.address.entity.AddressEntity;
 import br.com.olivaras.api.address.repository.AddressRepository;
 import br.com.olivaras.api.auth.entity.UserEntity;
@@ -30,7 +29,6 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -63,13 +61,6 @@ public class CheckoutService {
         this.lifecycle = lifecycle;
         this.qrCodes = qrCodes;
         this.boletoPdf = boletoPdf;
-    }
-
-    @Transactional(readOnly = true)
-    public List<AddressResponse> checkoutAddresses(UUID userId) {
-        requireActiveUser(userId);
-        return addresses.findAllByUser_IdOrderByCreatedAtDesc(userId).stream()
-                .map(AddressResponse::from).toList();
     }
 
     @Transactional
@@ -113,7 +104,8 @@ public class CheckoutService {
         String paymentReference = "SIM-" + UUID.randomUUID();
         String paymentInstructions = paymentInstructions(request.paymentMethod(), paymentReference, total,
                 paymentExpiresAt);
-        StoreOrderEntity order = orders.saveAndFlush(new StoreOrderEntity(user, address, total,
+        String cpfDigits = request.cpf().replaceAll("\\D", "");
+        StoreOrderEntity order = orders.saveAndFlush(new StoreOrderEntity(user, address, cpfDigits, total,
                 paymentReference, request.paymentMethod().name(), paymentInstructions, paymentExpiresAt));
         for (CartItemEntity line : lines) {
             WandProductEntity product = productById.get(line.getProduct().getId());
@@ -155,8 +147,7 @@ public class CheckoutService {
         if (page < 0 || size < 1 || size > 50) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Use page >= 0 e size entre 1 e 50");
         }
-        return orders.findAllByCustomer_IdOrderByCreatedAtDesc(userId,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")))
+        return orders.findAllByCustomer_IdOrderByCreatedAtDesc(userId, PageRequest.of(page, size))
                 .map(this::response);
     }
 

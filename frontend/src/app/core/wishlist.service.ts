@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
+import { API_BASE_URL } from './api';
 
 export interface WishlistItem {
   itemId: string;
@@ -24,7 +25,7 @@ export interface WishlistResponse {
 @Injectable({ providedIn: 'root' })
 export class WishlistService {
   private readonly http = inject(HttpClient);
-  private readonly wishlistUrl = 'http://localhost:8080/lojaolivaras/api/wishlist';
+  private readonly wishlistUrl = `${API_BASE_URL}/wishlist`;
 
   readonly items = signal<WishlistItem[]>([]);
   readonly favoriteIds = signal<ReadonlySet<string>>(new Set());

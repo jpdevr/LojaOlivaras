@@ -1,147 +1,239 @@
-# Loja Olivaras
+# Magia Olivaras
 
-Loja acadêmica fictícia de varinhas. O projeto foi preparado para Java 21, Spring Boot, PostgreSQL e futura interface Angular.
+**Magia Olivaras** é uma loja acadêmica de varinhas. O repositório **LojaOlivaras** reúne a vitrine pública, a área do cliente e o painel administrativo. A moeda é o galeão. Pagamento e entrega são simulados.
 
-## Ambiente local
+## Estrutura
 
-Requisitos: Docker Desktop com Docker Compose. Copie `.env.example` para `.env` se necessário e rode:
+| Pasta | Responsabilidade |
+| --- | --- |
+| [`frontend/`](frontend/) | Angular 21 e TypeScript. Vitrine, catálogo, carrinho, conta, pedidos, adivinhação e administração. |
+| [`backend/`](backend/) | Java 21 e Spring Boot. API REST, autenticação JWT, regras de negócio e simulação dos pedidos. |
+| [`backend/src/main/resources/db/migration/`](backend/src/main/resources/db/migration/) | Migrações Flyway e catálogo inicial no PostgreSQL 17. |
+
+## Como rodar
+
+### 1. Instale os pré-requisitos
+
+Você precisa de Git, Docker com Docker Compose e Node.js 24 com npm. O Docker compila e executa o backend com Java 21 e sobe o PostgreSQL. A instalação local de Java, Maven e PostgreSQL é opcional.
+
+### 2. Configure o `.env`
+
+Clone o projeto ou abra a cópia recebida. Na primeira execução, copie o arquivo de exemplo na raiz do repositório.
 
 ```powershell
-docker compose up --build
+git clone https://github.com/jpdevr/LojaOlivaras.git
+cd LojaOlivaras
+Copy-Item .env.example .env
 ```
 
-- API: `http://localhost:8080/lojaolivaras/api`
-- Health check: `http://localhost:8080/api/v1/health`
-- Swagger: `http://localhost:8080/swagger-ui.html`
-- PostgreSQL: `localhost:5432`
+No Bash, use `cp .env.example .env`. Edite o `.env`, defina `POSTGRES_PASSWORD` e substitua `JWT_SECRET` por uma chave aleatória de pelo menos 32 bytes. Use o comando abaixo para gerar a chave no PowerShell e copie o resultado para `JWT_SECRET=`.
 
-Parar os serviços: `docker compose down`. Para remover também os dados locais do banco: `docker compose down -v`.
+```powershell
+[Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')
+```
 
-## Frontend Angular
+| Variável | Exemplo local | Uso |
+| --- | --- | --- |
+| `POSTGRES_DB` | `olivaras` | Nome do banco. |
+| `POSTGRES_USER` | `olivaras` | Usuário do banco. |
+| `POSTGRES_PASSWORD` | Defina no `.env` | Senha do PostgreSQL usada pela API. |
+| `POSTGRES_PORT` | `5432` | Porta do banco na máquina. Dentro do Docker, a API acessa `db:5432`. |
+| `SERVER_PORT` | `8080` | Porta publicada na máquina. O contêiner continua na porta `8080`. Se mudar, atualize `API_BASE_URL` em [`frontend/src/app/core/api.ts`](frontend/src/app/core/api.ts). |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:4200` | Origem do Angular. Aceita uma lista separada por vírgulas. |
+| `JWT_SECRET` | Chave aleatória de 32 bytes ou mais | Assinatura e validação dos tokens. |
+| `JWT_EXPIRATION_MINUTES` | `30` | Validade do token de login. |
 
-O frontend fica em `frontend/` e usa Angular com TypeScript. A tela atual contém login e cadastro com HTML sem folha de estilos; os formulários chamam as rotas de auth do backend.
+O Git ignora o `.env`. As variáveis de criação do PostgreSQL valem na primeira inicialização do volume. Se você reutilizar um volume existente, use as credenciais desse volume.
 
-Requisitos: Node.js 24 e npm. Inicie o backend e, em outro terminal, rode:
+### 3. Suba a API e o banco
+
+Execute estes comandos na raiz do projeto.
+
+```powershell
+docker compose up -d --build
+docker compose ps
+docker compose logs -f backend
+```
+
+O Flyway cria o esquema e carrega o catálogo inicial. Aguarde o backend iniciar e confira a [saúde da API](http://localhost:8080/api/v1/health) ou o [Swagger](http://localhost:8080/swagger-ui.html). No último comando, `Ctrl+C` encerra a exibição dos logs.
+
+### 4. Suba o Angular
+
+Em outro terminal, entre no diretório do frontend para instalar as dependências e iniciar o Angular.
 
 ```powershell
 cd frontend
+npm ci
 npm start
 ```
 
-Abra `http://localhost:4200`. O token retornado pelo login fica apenas em memória enquanto a aplicação estiver aberta.
+Abra [Magia Olivaras](http://localhost:4200). Use `localhost` para corresponder à origem padrão do `.env`.
 
-## Estado atual
+Para gerar a versão otimizada, rode `npm run build` em `frontend/`. O resultado fica em `frontend/dist/frontend/browser/`. Ao publicar como site estático, configure o servidor para encaminhar URLs da SPA, como `/admin`, para `index.html`. Ajuste a URL da API no Angular e a origem no `.env`.
 
-O backend tem autenticação, perfil/endereço, catálogo, carrinho, checkout/pedidos e wishlist. O Swagger documenta os endpoints em `http://localhost:8080/swagger-ui.html`.
+Para parar o Angular, pressione `Ctrl+C` no terminal dele. Na raiz, `docker compose down` para os contêineres e preserva o banco e as imagens enviadas pelo administrador nos respectivos volumes.
 
-### Documentação e diagnóstico
+### 5. Prepare o administrador no banco local
+
+O cadastro público cria contas `CUSTOMER`. Cadastre uma conta de teste separada na loja. Depois, na raiz, substitua `admin@exemplo.com` pelo e-mail dessa conta no comando abaixo.
+
+```powershell
+$dbUser = (docker compose exec -T db printenv POSTGRES_USER).Trim()
+$dbName = (docker compose exec -T db printenv POSTGRES_DB).Trim()
+$promotionSql = "UPDATE app_user SET role = 'ADMIN', token_version = token_version + 1, updated_at = now() WHERE lower(email) = 'admin@exemplo.com' AND active AND role = 'CUSTOMER' RETURNING email, role;"
+$promotionSql | docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U $dbUser -d $dbName
+```
+
+Quando o resultado mostrar `ADMIN`, abra o [painel administrativo](http://localhost:4200/admin) e entre com as credenciais cadastradas. A promoção invalida sessões anteriores da conta.
+
+## Fluxos de uso e regras de negócio
+
+### Vitrine e catálogo
+
+- A página inicial e o catálogo são públicos. Visitantes podem pesquisar, abrir os detalhes de uma varinha e adicionar produtos ao carrinho.
+- O catálogo inclui produtos ativos da loja, com preço, estoque e detalhes. A busca considera nome, dono de referência e descrição. Os filtros da interface atuam sobre a página de resultados carregada. O modal usa características em comum para mostrar até três varinhas relacionadas.
+- Cada varinha do catálogo inicial tem três imagens locais, entregues com o Angular em `frontend/public/assets/wands/catalogo/`. O modal permite alternar entre elas. No PostgreSQL, `image_url` guarda o caminho da capa e `additional_image_urls` guarda os caminhos das demais imagens.
+- A loja tem um tema padrão em dourado e pergaminho e quatro temas de casa. A escolha fica no navegador. O painel administrativo usa o tema padrão, sem névoa.
+
+### Conta, endereços e favoritos
+
+- O cadastro exige nome, e-mail único, telefone, senha e data de nascimento. A idade deve ser superior a 16 anos no fuso de São Paulo. A senha pode ter até 72 bytes em UTF-8 e o hash usa BCrypt. O login por e-mail e senha emite um JWT, que o Angular mantém em memória.
+- Perfil, favoritos, adivinhação, checkout e pedidos exigem conta de cliente. Pelo perfil, o cliente edita nome e telefone e troca a senha após confirmar a atual. A troca invalida os tokens anteriores.
+- O primeiro endereço vira o padrão. O cliente pode escolher outro e a remoção do padrão promove um dos endereços restantes. O botão de CEP consulta o ViaCEP diretamente pelo navegador. O formulário também aceita preenchimento manual.
+- Favoritar o mesmo produto novamente mantém um único registro. Um produto esgotado pode continuar entre os favoritos, com a disponibilidade atual indicada.
+- A exclusão da conta pela API exige a senha atual. Ela desativa e anonimiza a conta e os dados de entrega dos pedidos, remove endereços, carrinho e favoritos e retira a varinha pessoal ativa. O histórico de compra fica preservado no banco.
+
+### Carrinho, checkout e pedidos
+
+1. Adicione produtos ao carrinho. O carrinho de visitante fica no navegador. Ao entrar como cliente, a API transfere as unidades disponíveis para a conta. A transferência tem um identificador para aceitar reenvios sem duplicar itens.
+2. Selecione os itens que deseja comprar. O limite é de 99 unidades por produto, respeitando o estoque. A disponibilidade é verificada novamente na confirmação.
+3. No checkout, informe o CPF e selecione um endereço próprio e um meio de pagamento. O formulário e a API validam os dígitos verificadores do CPF. O servidor guarda os 11 dígitos no pedido, sem retorná-los na API, e apaga esse dado se a conta for excluída. Durante a confirmação, o servidor bloqueia o estoque, grava os preços e o endereço usados e retira do carrinho somente os itens comprados.
+4. Acompanhe o pagamento e a entrega em **Meus pedidos**. O pedido começa como `CONFIRMED` com pagamento `PENDING`. Após o prazo, o pagamento passa a `SIMULATED_APPROVED` e o pedido a `PROCESSING`. Um dia após a aprovação, o pedido vira `DELIVERED`. O backend verifica as transições a cada cinco segundos por padrão.
+
+| Meio | Prazo de aprovação | Resultado na interface |
+| --- | --- | --- |
+| `PIX` | 5 minutos | QR code enquanto o pagamento está pendente. |
+| `BOLETO` | 15 minutos | Boleto para baixar em PDF. |
+| `CREDIT_CARD` | 2 minutos | Acompanhamento sem coleta de dados de cartão. |
+
+O QR code e o boleto são fictícios. As transições ilustram o processo de compra acadêmico.
+
+### Adivinhação
+
+- Entre como cliente e abra **Descubra sua varinha** na página inicial ou **Minha varinha** pelo menu da conta.
+- Dez respostas determinam madeira, núcleo, comprimento e flexibilidade. A combinação de madeira e núcleo escolhe uma de vinte artes. O cliente é o dono da varinha, com preço de sete galeões e estoque inicial de uma unidade.
+- Cada conta tem uma varinha pessoal ativa por vez. Ela pode ir para o carrinho do dono e fica fora do catálogo público. Repetir a revelação retorna a varinha ativa. Destruí-la retira a unidade do carrinho, preserva referências de pedidos anteriores e libera outro teste.
+
+### Administração
+
+- **Vendas** mostra receita aprovada, varinhas vendidas, quantidade de pedidos, receita diária e pedidos recentes. A interface oferece 7, 30 e 90 dias. Receita e unidades usam a data de aprovação, pedidos usam a data de criação e o período segue o fuso de São Paulo.
+- **Estoque** permite pesquisar por nome, cadastrar varinhas e registrar entradas e retiradas. O cadastro publica a varinha na vitrine. Cada ajuste é serializado por produto, e a API rejeita retirada superior ao saldo. Varinhas pessoais são gerenciadas pelo cliente.
+- No cadastro de produto, selecione uma imagem de capa e, se quiser, mais duas fotos. O backend grava os arquivos no volume Docker `wand_images` e registra seus caminhos no PostgreSQL. Ao rodar a API diretamente, as fotos ficam em `./data/wand-images` a partir do diretório de execução. Use `WAND_IMAGE_DIRECTORY` para escolher outro diretório.
+
+## Endpoints
+
+Os caminhos são relativos a `http://localhost:8080`. Para testar rotas protegidas no [Swagger](http://localhost:8080/swagger-ui.html), execute o login e informe apenas o `accessToken` em **Authorize**. Em chamadas HTTP diretas, envie `Authorization: Bearer <accessToken>`.
+
+- Autenticação e catálogo são públicos. Perfil, endereços, wishlist, carrinho, adivinhação e pedidos exigem o papel `CUSTOMER`. As rotas administrativas exigem `ADMIN`.
+- IDs entre chaves são UUIDs. Páginas começam em zero. Catálogo e histórico retornam registros em `content`. Estoque administrativo retorna `items`, `totalPages` e `totalItems`.
+- Erros comuns incluem `400` por entrada inválida, `401` por autenticação ausente ou inválida, `403` por papel insuficiente, `404` por recurso não encontrado e `409` por conflito. Erros de validação podem informar `fieldErrors`.
+
+### Diagnóstico e documentação
 
 | Método | Rota | Uso |
 | --- | --- | --- |
-| `GET` | `/swagger-ui.html` | Abre a interface do Swagger. |
-| `GET` | `/v3/api-docs` | Retorna a especificação OpenAPI em JSON. |
-| `GET` | `/v3/api-docs/swagger-config` | Retorna a configuração usada pelo Swagger UI. |
-| `GET` | `/api/v1/health` | Health check simples da API. |
-| `GET` | `/actuator/health` | Diagnóstico de saúde do Spring Boot. |
-| `GET` | `/actuator/info` | Informações da aplicação. |
+| `GET` | `/api/v1/health` | Identifica a API e retorna o estado básico do serviço. |
+| `GET` | `/actuator/health` | Retorna a saúde da aplicação, considerando o banco de dados. |
+| `GET` | `/swagger-ui.html` | Entrada do Swagger UI. |
+| `GET` | `/swagger-ui/index.html` | Interface do Swagger UI. |
+| `GET` | `/v3/api-docs` | Especificação OpenAPI em JSON. |
+| `GET` | `/v3/api-docs/swagger-config` | Configuração utilizada pelo Swagger UI. |
+| `GET` | `/v3/api-docs.yaml` | Especificação OpenAPI em YAML, acessível com JWT válido. |
 
-### Cadastro e login
+### Autenticação e catálogo
 
-- `POST /lojaolivaras/api/auth/register`: recebe `profileName`, `email`, `password`, `phone` e `birthDate` (`AAAA-MM-DD`). A pessoa precisa ter **mais de 16 anos**; quem tem exatamente 16 ainda não pode se cadastrar.
-- `POST /lojaolivaras/api/auth/login`: recebe `email` e `password`; devolve JWT Bearer e dados públicos da conta.
-- `POST /lojaolivaras/api/auth/google`: recebe `idToken`. No primeiro acesso, também recebe `profileName`, `phone` e `birthDate`, pois o login básico do Google não fornece esses campos obrigatórios da loja. O Google ID token é verificado no servidor quanto à assinatura, emissor, audiência e e-mail verificado.
-
-Senha local é armazenada com BCrypt. Cadastro público sempre cria `CUSTOMER`; o papel não é aceito no corpo da requisição. Conta Google não recebe senha local e usa a identidade Google vinculada.
+| Método | Rota | Entrada e resultado |
+| --- | --- | --- |
+| `POST` | `/lojaolivaras/api/auth/register` | `profileName`, `email`, `password`, `phone` e `birthDate` em `AAAA-MM-DD`. Cria a conta e retorna `201`. |
+| `POST` | `/lojaolivaras/api/auth/login` | `email` e `password`. Retorna `accessToken`, `tokenType`, `expiresIn` em segundos e `user`. |
+| `GET` | `/lojaolivaras/api/catalogo/list-item` | Compras e consultas públicas usam o catálogo de varinhas ativas. `page=0`, `size=20` por padrão. `size` aceita de 1 a 100. |
+| `GET` | `/lojaolivaras/api/catalogo/search` | Busca por `q`, `wood` e/ou `core`, com a mesma paginação. |
+| `GET` | `/lojaolivaras/api/catalogo/item-detail/{id}` | Detalhes e estoque de uma varinha pública. `imageUrls` lista as imagens na ordem de exibição. |
+| `GET` | `/lojaolivaras/api/catalogo/item-detail/{id}/related` | Até três varinhas relacionadas do catálogo. |
+| `GET` | `/lojaolivaras/api/catalogo/imagens/{id}.{extension}` | Exibe um arquivo local cadastrado pelo administrador. A extensão é `jpg` ou `png`. |
 
 ### Perfil e endereços
 
-Todas as rotas abaixo exigem `Authorization: Bearer <token>` obtido no login. O servidor identifica a conta pelo `sub` do JWT; nunca envie ou aceite um `userId` do cliente para escolher o perfil.
-
-| Método | Rota | Uso |
+| Método | Rota | Entrada e resultado |
 | --- | --- | --- |
-| `GET` | `/lojaolivaras/api/profile` | Consulta o próprio perfil (rota adicional para visualização). |
-| `POST` | `/lojaolivaras/api/profile/edit` | Atualiza `profileName` e/ou `phone`. E-mail e data de nascimento não são editáveis aqui. |
-| `POST` | `/lojaolivaras/api/profile/change-password` | Altera a senha local; exige senha atual e nova senha (10 a 72 caracteres). |
-| `POST` | `/lojaolivaras/api/profile/deleteaccount` | Encerra a conta após reautenticação: senha atual ou ID token Google recente. |
-| `GET` | `/lojaolivaras/api/profile/address` | Lista os próprios endereços. |
-| `POST` | `/lojaolivaras/api/profile/address/add` | Cadastra endereço; o primeiro vira padrão automaticamente. |
-| `POST` | `/lojaolivaras/api/profile/address/edit/{id}` | Substitui um endereço da própria conta. |
-| `POST` | `/lojaolivaras/api/profile/address/delete/{id}` | Remove endereço próprio; se era padrão, promove outro. |
-| `GET` | `/lojaolivaras/api/profile/orders/` | Lista os próprios pedidos, paginados; também aceita sem a barra final. |
-| `GET` | `/lojaolivaras/api/profile/orders/{id}` | Consulta um pedido próprio. |
+| `GET` | `/lojaolivaras/api/profile` | Dados da própria conta. |
+| `POST` | `/lojaolivaras/api/profile/edit` | Atualiza `profileName`, `phone` ou ambos. |
+| `POST` | `/lojaolivaras/api/profile/change-password` | `currentPassword` e `newPassword`. Retorna `204`. |
+| `POST` | `/lojaolivaras/api/profile/deleteaccount` | `currentPassword`. Desativa e anonimiza a conta. Retorna `204`. Disponível por API. |
+| `GET` | `/lojaolivaras/api/profile/address` | Lista os endereços próprios. |
+| `POST` | `/lojaolivaras/api/profile/address/add` | Cria endereço e retorna `201`. |
+| `POST` | `/lojaolivaras/api/profile/address/edit/{addressId}` | Substitui os dados de um endereço próprio. |
+| `POST` | `/lojaolivaras/api/profile/address/delete/{addressId}` | Remove endereço e retorna `204`. |
+| `POST` | `/lojaolivaras/api/profile/address/default/{addressId}` | Define o endereço como padrão da conta. |
 
-### Catálogo
+Para criar ou editar endereço, envie `recipient`, `zipCode`, `street`, `number`, `district`, `city` e `state`. O corpo também aceita `label`, `complement`, `reference` e `defaultAddress`. O CEP aceita oito dígitos com hífen opcional e o estado recebe a sigla de duas letras.
 
-As consultas do catálogo são públicas. Os itens são páginas ordenadas pelo nome; `page` começa em zero e `size` aceita de 1 a 100. A resposta exibe disponibilidade, não a quantidade exata em estoque.
+### Wishlist e adivinhação
 
-| Método | Rota | Uso |
+| Método | Rota | Entrada e resultado |
 | --- | --- | --- |
-| `GET` | `/lojaolivaras/api/catalogo/list-item` | Lista itens ativos. Parâmetros opcionais: `page`, `size`. |
-| `GET` | `/lojaolivaras/api/catalogo/search` | Busca por `q`, `wood` e/ou `core`; também aceita `page` e `size`. |
-| `GET` | `/lojaolivaras/api/catalogo/item-detail/{id}` | Detalha item pelo UUID. |
-
-O seed inicial contém 20 varinhas com informações documentadas, incluindo uma baseada em detalhes de produção de filme. Características sem confirmação ficam vazias, preços e estoques são fictícios para a atividade e as imagens ficam sem URL até haver material autorizado. Cada item guarda a referência e a categoria da fonte.
+| `GET` | `/lojaolivaras/api/wishlist/list` | Lista os favoritos da conta. |
+| `POST` | `/lojaolivaras/api/wishlist/add` | `itemId` do catálogo. Salva um favorito. |
+| `POST` | `/lojaolivaras/api/wishlist/remove` | `itemId` do catálogo. Remove o favorito. |
+| `POST` | `/lojaolivaras/api/wishlist/clear` | Limpa todos os favoritos. Disponível por API. |
+| `GET` | `/lojaolivaras/api/profile/wand-divination/questions` | Dez perguntas com quatro alternativas por pergunta. |
+| `GET` | `/lojaolivaras/api/profile/wand-divination` | Varinha pessoal atual ou `204` se ainda não houver uma. |
+| `POST` | `/lojaolivaras/api/profile/wand-divination` | `answers`, lista de dez índices de `0` a `3` na ordem das perguntas. Retorna a varinha pessoal. |
+| `DELETE` | `/lojaolivaras/api/profile/wand-divination/{wandId}` | Retira a própria varinha ativa e retorna `204`. |
 
 ### Carrinho
 
-As rotas exigem JWT Bearer de uma conta `CUSTOMER`. Cada conta possui um carrinho persistido. O total é recalculado pelo preço atual do catálogo; quantidade por produto aceita de 1 a 99. O carrinho não reserva estoque: a disponibilidade é conferida novamente na finalização.
-
-| Método | Rota | Uso |
+| Método | Rota | Entrada e resultado |
 | --- | --- | --- |
-| `GET` | `/lojaolivaras/api/cart/list` | Lista itens, disponibilidade e total do próprio carrinho. |
-| `POST` | `/lojaolivaras/api/cart/add` | Adiciona ou soma quantidade. Corpo: `{"itemId":"<UUID do produto>","quantity":1}`. |
-| `POST` | `/lojaolivaras/api/cart/remove` | Remove produto. Corpo: `{"itemId":"<UUID do produto>"}`. |
-| `POST` | `/lojaolivaras/api/cart/update-quantity/{itemId}` | Define nova quantidade. Corpo: `{"quantity":2}`. |
+| `GET` | `/lojaolivaras/api/cart/list` | Itens, disponibilidade e totais da conta. |
+| `GET` | `/lojaolivaras/api/cart/total` | `totalGalleons` e `totalItems`. O Angular usa o total de unidades na navegação. |
+| `POST` | `/lojaolivaras/api/cart/add` | `itemId` e `quantity`. Adiciona ou soma unidades. |
+| `POST` | `/lojaolivaras/api/cart/merge` | `transferId` e `items`, lista com pares `itemId` e `quantity`. Retorna `skippedUnits`. |
+| `POST` | `/lojaolivaras/api/cart/update-quantity/{itemId}` | `quantity`. Substitui a quantidade de um produto no carrinho. |
+| `POST` | `/lojaolivaras/api/cart/remove` | `itemId`. Retira o produto do carrinho. |
 | `POST` | `/lojaolivaras/api/cart/clear` | Esvazia o carrinho. |
-| `GET` | `/lojaolivaras/api/cart/total` | Consulta total e quantidade de unidades. |
 
 ### Checkout e pedidos
 
-O checkout exige um endereço cadastrado na própria conta e um carrinho não vazio. A confirmação grava preço, características do produto e endereço como fotografia do momento do pedido, reserva o estoque atomicamente e esvazia o carrinho. O pedido começa como `CONFIRMED` e o pagamento como `PENDING`. A simulação aprova automaticamente o pagamento após o prazo do método; o pedido passa a `PROCESSING` e é marcado `DELIVERED` um dia depois. Um agendador no backend aplica essas mudanças mesmo se o cliente sair da página.
-
-| Método | Rota | Uso |
+| Método | Rota | Entrada e resultado |
 | --- | --- | --- |
-| `POST` | `/lojaolivaras/api/checkout/confirm` | Confirma o pedido e inicia o pagamento simulado. Corpo: `{"addressId":"<UUID do endereço>","paymentMethod":"PIX"}`. Métodos: `PIX` (5 min), `BOLETO` (15 min) e `CREDIT_CARD` (2 min). |
-| `GET` | `/lojaolivaras/api/checkout/addresses` | Lista endereços próprios para entrega. |
-| `GET` | `/lojaolivaras/api/checkout/order/{id}` | Consulta um pedido próprio. |
-| `GET` | `/lojaolivaras/api/checkout/payment-status/{orderId}` | Consulta estado, prazo restante e instruções simuladas; para PIX também retorna QR code PNG em data URI. |
-| `GET` | `/lojaolivaras/api/checkout/order/{id}/boleto` | Baixa PDF fictício com os dados do pedido, apenas para pedidos com método boleto. |
-| `GET` | `/lojaolivaras/api/profile/orders/` | Lista o histórico e os status atuais dos pedidos próprios. |
-| `GET` | `/lojaolivaras/api/profile/orders/{id}` | Consulta um pedido próprio pelo histórico. |
+| `GET` | `/lojaolivaras/api/checkout/addresses` | Lista endereços próprios para entrega usando a consulta do perfil. |
+| `POST` | `/lojaolivaras/api/checkout/confirm` | `addressId`, `paymentMethod`, `cpf` com ou sem pontuação e `itemIds` opcional para seleção parcial. Sem `itemIds`, tenta comprar o carrinho inteiro. Cria o pedido e retorna `201`. |
+| `GET` | `/lojaolivaras/api/checkout/order/{id}` | Detalhes de pedido próprio, incluindo itens e endereço. |
+| `GET` | `/lojaolivaras/api/checkout/payment-status/{orderId}` | Estado, prazo e dados do pagamento. Inclui QR code em data URI para PIX pendente. |
+| `GET` | `/lojaolivaras/api/checkout/order/{id}/boleto` | PDF de um pedido que usa boleto. |
+| `GET` | `/lojaolivaras/api/profile/orders` | Histórico em ordem decrescente de criação. `page=0` e `size=20` por padrão, com `size` de 1 a 50. |
+| `GET` | `/lojaolivaras/api/profile/orders/` | Alias do histórico com barra final. |
 
-O QR code contém um identificador de demonstração e não inicia uma transferência PIX real. O boleto PDF também é fictício e não pode ser pago em banco. O checkout não pede nem armazena dados de cartão. `SIMULATED_APPROVED` significa apenas que o prazo da simulação terminou; nenhuma cobrança real foi feita.
+### Administração
 
-Após exclusão da conta, o carrinho é removido e dados de endereço copiados para pedidos são anonimizados.
-
-### Wishlist
-
-As rotas exigem JWT Bearer de uma conta `CUSTOMER`. A wishlist pertence ao usuário autenticado; `itemId` é o UUID do produto do catálogo. Adicionar o mesmo produto novamente não cria duplicata. Itens fora de estoque continuam salvos, mas são marcados como indisponíveis.
-
-| Método | Rota | Uso |
+| Método | Rota | Entrada e resultado |
 | --- | --- | --- |
-| `GET` | `/lojaolivaras/api/wishlist/list` | Lista itens salvos e disponibilidade atual. |
-| `POST` | `/lojaolivaras/api/wishlist/add` | Salva produto. Corpo: `{"itemId":"<UUID do produto>"}`. |
-| `POST` | `/lojaolivaras/api/wishlist/remove` | Remove produto. Corpo: `{"itemId":"<UUID do produto>"}`. |
-| `POST` | `/lojaolivaras/api/wishlist/clear` | Limpa a própria wishlist. |
+| `GET` | `/lojaolivaras/api/admin/sales` | Indicadores e pedidos recentes. `days=30` por padrão e aceita de 1 a 90. |
+| `GET` | `/lojaolivaras/api/admin/inventory` | Estoque em páginas de 20. Aceita `search` para buscar por nome e `page`. |
+| `POST` | `/lojaolivaras/api/admin/inventory` | Cadastra uma varinha por `multipart/form-data` e retorna `201`. |
+| `PATCH` | `/lojaolivaras/api/admin/inventory/{id}/stock` | `change`, inteiro positivo para entrada ou negativo para retirada. Retorna o saldo atualizado. |
 
-A wishlist também é removida quando a conta é excluída.
+A parte `product` deve ter tipo `application/json` e incluir `name`, `description`, `priceGalleons` e `stock`. Os campos opcionais são `wood`, `core`, `lengthInches`, `flexibility` e `maker`. Envie cada arquivo na parte `images` e coloque a capa primeiro. A API aceita de um a três arquivos PNG ou JPEG, com até 5 MB e 4096 × 4096 pixels por arquivo.
 
-Exemplos de corpos:
-
-```json
-{"profileName":"Luna","phone":"+5511999999999"}
+```powershell
+curl.exe "http://localhost:8080/lojaolivaras/api/admin/inventory" `
+  -H "Authorization: Bearer $adminToken" `
+  -F "product=@produto.json;type=application/json" `
+  -F "images=@capa.png" `
+  -F "images=@detalhe.jpg"
 ```
 
-```json
-{"currentPassword":"senha-atual","newPassword":"uma-senha-nova-segura"}
-```
+## Licença
 
-As respostas não incluem senha, hash, identidade Google ou token. Senhas locais são armazenadas como hash BCrypt. Alterar a senha invalida todos os JWTs já emitidos. Excluir conta exige reautenticação, apaga os endereços e anonimiza os dados pessoais básicos; o registro inativo permanece para integridade futura. Conta Google não tem senha local para alterar. A edição de e-mail e a recuperação de acesso ficam para uma etapa com verificação de e-mail.
-
-## Dependências externas futuras
-
-- Recuperação de senha precisará de SMTP ou provedor de e-mail.
-- CEP pode ser consultado via ViaCEP, sem chave de API.
-- Fotos de perfil e imagens dos produtos precisam de uma solução de armazenamento; PostgreSQL guardará somente metadados/URLs.
-- A conversão Galeão/Real usa uma taxa local ilustrativa definida no `.env`.
-- Para habilitar Google, crie um OAuth Client ID no Google Cloud Console, defina `GOOGLE_AUTH_ENABLED=true` e preencha `GOOGLE_CLIENT_ID` no `.env`. O fluxo escolhido valida um ID token enviado pelo cliente, por isso não precisa de client secret no backend. O frontend futuro usará o mesmo Client ID e deverá ter sua origem autorizada no Google Cloud Console.
+O código usa a [licença MIT](LICENSE). As licenças das fontes ficam em [`frontend/public/assets/fonts/`](frontend/public/assets/fonts/).

@@ -8,6 +8,9 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -63,6 +66,9 @@ public class WandProductEntity {
     @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
+    @Column(name = "additional_image_urls", nullable = false, columnDefinition = "text[]")
+    private String[] additionalImageUrls = new String[0];
+
     @Column(nullable = false)
     private boolean active;
 
@@ -73,6 +79,27 @@ public class WandProductEntity {
     private Instant updatedAt;
 
     protected WandProductEntity() {}
+
+    public static WandProductEntity forSale(String name, String wood, String core, BigDecimal length,
+                                            String flexibility, String maker, String description,
+                                            BigDecimal price, int stock, List<String> imageUrls) {
+        WandProductEntity wand = new WandProductEntity();
+        wand.slug = "loja-" + UUID.randomUUID();
+        wand.name = name;
+        wand.wood = wood;
+        wand.core = core;
+        wand.lengthInches = length;
+        wand.flexibility = flexibility;
+        wand.maker = maker;
+        wand.description = description;
+        wand.canonTier = "STORE_ORIGINAL";
+        wand.priceGalleons = price;
+        wand.stock = stock;
+        wand.imageUrl = imageUrls.getFirst();
+        wand.additionalImageUrls = imageUrls.subList(1, imageUrls.size()).toArray(String[]::new);
+        wand.active = true;
+        return wand;
+    }
 
     public static WandProductEntity personalWand(UUID customerId, String ownerName, String wood, String core,
                                                 BigDecimal length, String flexibility, String description,
@@ -107,6 +134,13 @@ public class WandProductEntity {
         stock -= quantity;
     }
 
+    public boolean adjustStock(int change) {
+        long adjusted = (long) stock + change;
+        if (adjusted < 0 || adjusted > Integer.MAX_VALUE) return false;
+        stock = (int) adjusted;
+        return true;
+    }
+
     @PrePersist
     void beforeInsert() { Instant now = Instant.now(); createdAt = now; updatedAt = now; }
 
@@ -128,7 +162,12 @@ public class WandProductEntity {
     public BigDecimal getPriceGalleons() { return priceGalleons; }
     public int getStock() { return stock; }
     public String getImageUrl() { return imageUrl; }
+    public List<String> getImageUrls() {
+        if (imageUrl == null) return List.of();
+        List<String> gallery = new ArrayList<>(1 + additionalImageUrls.length);
+        gallery.add(imageUrl);
+        Collections.addAll(gallery, additionalImageUrls);
+        return gallery;
+    }
     public boolean isActive() { return active; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
 }

@@ -25,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class CartService {
+    private static final int MAX_QUANTITY_PER_PRODUCT = 99;
     private final UserRepository users;
     private final ShoppingCartRepository carts;
     private final CartItemRepository items;
@@ -54,6 +55,9 @@ public class CartService {
         WandProductEntity product = activeProduct(request.itemId(), userId);
         CartItemEntity line = items.findByCart_IdAndProduct_Id(cart.getId(), product.getId()).orElse(null);
         int newQuantity = request.quantity() + (line == null ? 0 : line.getQuantity());
+        if (newQuantity > MAX_QUANTITY_PER_PRODUCT) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "O limite é de 99 unidades por produto no carrinho");
+        }
         ensureStock(product, newQuantity);
         if (line == null) line = new CartItemEntity(cart, product, newQuantity);
         else line.setQuantity(newQuantity);
@@ -78,7 +82,8 @@ public class CartService {
             }
             CartItemEntity line = items.findByCart_IdAndProduct_Id(cart.getId(), product.getId()).orElse(null);
             int current = line == null ? 0 : line.getQuantity();
-            int accepted = Math.min(entry.quantity(), Math.max(0, Math.min(99, product.getStock()) - current));
+            int available = Math.min(MAX_QUANTITY_PER_PRODUCT, product.getStock()) - current;
+            int accepted = Math.min(entry.quantity(), Math.max(0, available));
             skipped += entry.quantity() - accepted;
             if (accepted == 0) continue;
             if (line == null) line = new CartItemEntity(cart, product, accepted);

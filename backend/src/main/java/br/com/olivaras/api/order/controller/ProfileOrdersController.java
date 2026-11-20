@@ -10,7 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,12 +29,6 @@ public class ProfileOrdersController {
                                     @RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "20") int size) {
         return checkout.orderHistory(userId(jwt), page, size);
-    }
-
-    @GetMapping("/{id}")
-    @Operation(summary = "Consulta um pedido próprio pelo UUID")
-    public OrderResponse detail(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
-        return checkout.order(userId(jwt), id);
     }
 
     private UUID userId(Jwt jwt) { return UUID.fromString(jwt.getSubject()); }

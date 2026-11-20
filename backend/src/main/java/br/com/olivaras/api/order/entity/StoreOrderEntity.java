@@ -58,6 +58,9 @@ public class StoreOrderEntity {
     @Column(nullable = false, length = 120)
     private String recipient;
 
+    @Column(name = "customer_cpf", length = 11)
+    private String customerCpf;
+
     @Column(name = "zip_code", nullable = false, length = 8)
     private String zipCode;
 
@@ -87,10 +90,11 @@ public class StoreOrderEntity {
 
     protected StoreOrderEntity() {}
 
-    public StoreOrderEntity(UserEntity customer, AddressEntity address, BigDecimal totalGalleons,
+    public StoreOrderEntity(UserEntity customer, AddressEntity address, String customerCpf, BigDecimal totalGalleons,
                             String paymentReference, String paymentMethod, String paymentInstructions,
                             Instant paymentExpiresAt) {
         this.customer = customer;
+        this.customerCpf = customerCpf;
         this.totalGalleons = totalGalleons;
         this.paymentReference = paymentReference;
         this.paymentMethod = paymentMethod;
@@ -110,20 +114,7 @@ public class StoreOrderEntity {
     @PrePersist
     void beforeInsert() { createdAt = Instant.now(); }
 
-    public void markPaymentApproved(Instant approvedAt) {
-        this.paymentStatus = "SIMULATED_APPROVED";
-        this.status = "PROCESSING";
-        this.paidAt = approvedAt;
-        this.estimatedDeliveryAt = approvedAt.plus(java.time.Duration.ofDays(1));
-    }
-
-    public void markDelivered(Instant deliveredAt) {
-        this.status = "DELIVERED";
-        this.deliveredAt = deliveredAt;
-    }
-
     public UUID getId() { return id; }
-    public UserEntity getCustomer() { return customer; }
     public String getStatus() { return status; }
     public String getPaymentStatus() { return paymentStatus; }
     public String getPaymentMethod() { return paymentMethod; }

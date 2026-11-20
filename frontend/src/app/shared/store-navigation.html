@@ -96,7 +96,7 @@
               <li><a routerLink="/wishlist"><app-store-icon name="wishlist" /> Wishlist</a></li>
               <li><a routerLink="/orders"><app-store-icon name="orders" /> Meus pedidos</a></li>
             } @else {
-              <li><span><app-store-icon name="shield" /> Área administrativa</span></li>
+              <li><a routerLink="/admin"><app-store-icon name="shield" /> Área administrativa</a></li>
             }
             @if (!user()) {
               <li><a routerLink="/login"><app-store-icon name="sign-in" /> Entrar</a></li>

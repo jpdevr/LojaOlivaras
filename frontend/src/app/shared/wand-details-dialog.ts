@@ -26,9 +26,11 @@ export class WandDetailsDialog {
     BOOKS: 'Livros',
     OFFICIAL_SUPPLEMENTAL: 'Material oficial complementar',
     FILM_PRODUCTION: 'Produção cinematográfica',
+    STORE_ORIGINAL: 'Criação da loja',
   };
 
   readonly wand = signal<CatalogItem | null>(null);
+  readonly activeImage = signal(0);
   readonly related = signal<CatalogItem[]>([]);
   readonly failed = signal(false);
   readonly adding = signal(false);
@@ -50,6 +52,7 @@ export class WandDetailsDialog {
     toObservable(this.details.itemId).pipe(
       switchMap((id) => {
         this.wand.set(null);
+        this.activeImage.set(0);
         this.related.set([]);
         this.failed.set(false);
         this.cartMessage.set('');

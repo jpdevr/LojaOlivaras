@@ -9,10 +9,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ResponseEntity<?> handleUploadSize() {
+        return handleStatus(new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE,
+                "Cada imagem pode ter até 5 MB"));
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     ResponseEntity<?> handleStatus(ResponseStatusException exception) {
         HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());

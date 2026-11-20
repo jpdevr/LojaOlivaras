@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { CatalogItem } from './catalog.service';
+import { API_BASE_URL } from './api';
 
 export interface DivinationQuestion {
   prompt: string;
@@ -12,7 +13,7 @@ export type PersonalWand = Omit<CatalogItem, 'sourceReference'>;
 @Injectable({ providedIn: 'root' })
 export class DivinationService {
   private readonly http = inject(HttpClient);
-  private readonly url = 'http://localhost:8080/lojaolivaras/api/profile/wand-divination';
+  private readonly url = `${API_BASE_URL}/profile/wand-divination`;
 
   questions() { return this.http.get<DivinationQuestion[]>(`${this.url}/questions`); }
 

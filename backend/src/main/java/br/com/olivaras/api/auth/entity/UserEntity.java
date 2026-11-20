@@ -29,9 +29,6 @@ public class UserEntity {
     @Column(name = "password_hash", length = 100)
     private String passwordHash;
 
-    @Column(name = "google_subject", length = 255, unique = true)
-    private String googleSubject;
-
     @Column(length = 30)
     private String phone;
 
@@ -59,16 +56,12 @@ public class UserEntity {
 
     protected UserEntity() {}
 
-    public UserEntity(String profileName, String email, String passwordHash, String googleSubject,
-                      String phone, LocalDate birthDate) {
+    public UserEntity(String profileName, String email, String passwordHash, String phone, LocalDate birthDate) {
         this.profileName = profileName;
         this.email = email;
         this.passwordHash = passwordHash;
-        this.googleSubject = googleSubject;
         this.phone = phone;
         this.birthDate = birthDate;
-        this.role = Role.CUSTOMER;
-        this.active = true;
     }
 
     @PrePersist
@@ -95,7 +88,6 @@ public class UserEntity {
         this.profileName = "Conta excluída";
         this.email = "deleted+" + id + "@deleted.invalid";
         this.passwordHash = null;
-        this.googleSubject = null;
         this.phone = null;
         this.birthDate = null;
         this.active = false;
@@ -107,12 +99,10 @@ public class UserEntity {
     public String getProfileName() { return profileName; }
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
-    public String getGoogleSubject() { return googleSubject; }
     public String getPhone() { return phone; }
     public LocalDate getBirthDate() { return birthDate; }
     public Role getRole() { return role; }
     public boolean isActive() { return active; }
     public Instant getCreatedAt() { return createdAt; }
     public int getTokenVersion() { return tokenVersion; }
-    public Instant getDeletedAt() { return deletedAt; }
 }

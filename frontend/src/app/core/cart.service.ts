@@ -4,6 +4,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, Subject, catchError, finalize, map, of, startWith, switchMap, tap } from 'rxjs';
 import { AuthService } from './auth.service';
 import type { CatalogItem } from './catalog.service';
+import { API_BASE_URL } from './api';
 
 export interface CartItem {
   itemId: string;
@@ -34,7 +35,7 @@ interface GuestCartTransfer {
 export class CartService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
-  private readonly cartUrl = 'http://localhost:8080/lojaolivaras/api/cart';
+  private readonly cartUrl = `${API_BASE_URL}/cart`;
   private readonly guestCartKey = 'olivaras.guest-cart';
   private readonly totalRefresh = new Subject<void>();
   private readonly customerSession = computed(() => this.auth.getCurrentUser()()?.role === 'CUSTOMER'

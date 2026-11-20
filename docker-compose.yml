@@ -23,14 +23,19 @@ services:
     env_file:
       - .env
     environment:
+      SERVER_PORT: 8080
+      WAND_IMAGE_DIRECTORY: /app/wand-images
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-olivaras}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-olivaras}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD no .env}
     ports:
       - "${SERVER_PORT:-8080}:8080"
+    volumes:
+      - wand_images:/app/wand-images
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   postgres_data:
+  wand_images:

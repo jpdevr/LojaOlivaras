@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router, Routes } from '@angular/router';
 import { AuthService } from './core/auth.service';
 
-const requireLogin: CanActivateFn = (route, state) => {
+const requireLogin: CanActivateFn = (_route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return auth.getAccessToken() ? true : router.createUrlTree(['/login'], {
@@ -18,7 +18,24 @@ const requireCustomer: CanActivateFn = () => {
     : router.createUrlTree(['/home']);
 };
 
-export const routes: Routes = [
+const requireStoreVisitor: CanActivateFn = () =>
+  inject(AuthService).getCurrentUser()()?.role === 'ADMIN'
+    ? inject(Router).createUrlTree(['/admin'])
+    : true;
+
+const requireAdmin: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.getAccessToken()) return router.createUrlTree(['/admin/entrar']);
+  return auth.getCurrentUser()()?.role === 'ADMIN' ? true : router.createUrlTree(['/home']);
+};
+
+const requireAdminLoginVisitor: CanActivateFn = () => {
+  const user = inject(AuthService).getCurrentUser()();
+  return user ? inject(Router).createUrlTree([user.role === 'ADMIN' ? '/admin' : '/home']) : true;
+};
+
+const storeRoutes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'home' },
   {
     path: 'login',
@@ -73,4 +90,35 @@ export const routes: Routes = [
     loadComponent: () => import('./order-page/order-page').then((module) => module.OrderPage),
   },
   { path: '**', redirectTo: 'home' },
+];
+
+export const routes: Routes = [
+  {
+    path: 'admin',
+    children: [
+      {
+        path: 'entrar',
+        canActivate: [requireAdminLoginVisitor],
+        loadComponent: () => import('./admin/admin-login').then((module) => module.AdminLogin),
+      },
+      {
+        path: '',
+        canActivate: [requireAdmin],
+        canActivateChild: [requireAdmin],
+        loadComponent: () => import('./admin/admin-shell').then((module) => module.AdminShell),
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () => import('./admin/admin-sales').then((module) => module.AdminSales),
+          },
+          {
+            path: 'estoque',
+            loadComponent: () => import('./admin/admin-inventory').then((module) => module.AdminInventory),
+          },
+        ],
+      },
+    ],
+  },
+  { path: '', canActivateChild: [requireStoreVisitor], children: storeRoutes },
 ];

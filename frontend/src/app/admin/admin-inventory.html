@@ -1,0 +1,113 @@
+<div class="admin-heading">
+  <h1>Estoque</h1>
+  <button class="admin-primary" type="button" (click)="beginCreate()">Nova varinha</button>
+</div>
+
+<form class="admin-filter" (ngSubmit)="filter()" role="search">
+  <label class="admin-visually-hidden" for="stock-search">Buscar por nome</label>
+  <input id="stock-search" type="search" name="search" placeholder="Buscar por nome" maxlength="160" [(ngModel)]="search" />
+  <button class="admin-secondary" type="submit">Buscar</button>
+</form>
+@if (message()) { <p class="admin-feedback" role="status">{{ message() }}</p> }
+
+@if (loadFailed()) {
+  <div class="arch-frame admin-panel admin-empty">
+    <p class="admin-error" role="alert">Não foi possível carregar o estoque.</p>
+    <button class="admin-secondary" type="button" (click)="goToPage(criteria().page)">Tentar novamente</button>
+  </div>
+} @else if (stock(); as result) {
+  @if (result.items.length) {
+    <div class="arch-frame admin-panel admin-section">
+      <div class="admin-scroll" tabindex="0" role="region" aria-label="Tabela de estoque">
+        <table class="admin-table">
+          <thead><tr><th scope="col">Varinha</th><th scope="col">Preço</th><th scope="col">Unidades</th><th scope="col">Ações</th></tr></thead>
+          <tbody>
+            @for (item of result.items; track item.id) {
+              <tr>
+                <th scope="row">{{ item.name }} @if (!item.active) { <small>Inativa</small> }</th>
+                <td>{{ number.format(item.priceGalleons) }} galeões</td>
+                <td><span [class.admin-low]="item.stock < 5">{{ number.format(item.stock) }}</span></td>
+                <td>
+                  <button class="admin-secondary" type="button" [attr.aria-label]="'Ajustar estoque de ' + item.name"
+                          (click)="beginAdjustment(item)">Ajustar</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+    @if (result.totalPages > 1) {
+      <nav class="admin-pagination" aria-label="Páginas do estoque">
+        <button class="admin-secondary" type="button" [disabled]="criteria().page === 0"
+                (click)="goToPage(criteria().page - 1)">Anterior</button>
+        <span>Página {{ criteria().page + 1 }} de {{ result.totalPages }}</span>
+        <button class="admin-secondary" type="button" [disabled]="criteria().page + 1 >= result.totalPages"
+                (click)="goToPage(criteria().page + 1)">Próxima</button>
+      </nav>
+    }
+  } @else {
+    <p class="arch-frame admin-panel admin-empty">Nenhuma varinha encontrada.</p>
+  }
+} @else {
+  <p class="arch-frame admin-panel admin-empty" role="status">Carregando estoque…</p>
+}
+
+<dialog #editorDialog class="arch-frame admin-editor" aria-labelledby="stock-editor-title"
+        (close)="editor.set(null)" (cancel)="saving() && $event.preventDefault()">
+  @if (editor(); as current) {
+    @if (current.type === 'create') {
+      <form class="admin-editor-form" #newWandForm="ngForm" (ngSubmit)="saveWand()">
+        <h2 id="stock-editor-title">Nova varinha</h2>
+        <div class="admin-fields">
+          <label class="admin-wide">Nome <input name="name" required maxlength="160" [(ngModel)]="draft.name" /></label>
+          <label>Preço em galeões <input name="price" type="number" min="0" max="9999999999.99" step="0.01"
+                                        required [(ngModel)]="draft.priceGalleons" /></label>
+          <label>Quantidade inicial <input name="stock" type="number" min="0" max="2147483647" step="1"
+                                           required [(ngModel)]="draft.stock" /></label>
+          <label>Madeira <input name="wood" maxlength="80" [(ngModel)]="draft.wood" /></label>
+          <label>Núcleo <input name="core" maxlength="120" [(ngModel)]="draft.core" /></label>
+          <label>Comprimento em polegadas <input name="length" type="number" min="0.01" max="999.99" step="0.01"
+                                                [(ngModel)]="draft.lengthInches" /></label>
+          <label>Flexibilidade <input name="flexibility" maxlength="100" [(ngModel)]="draft.flexibility" /></label>
+          <label class="admin-wide">Fabricante <input name="maker" maxlength="120" [(ngModel)]="draft.maker" /></label>
+          @for (label of imageLabels; track label; let index = $index) {
+            <label class="admin-wide">{{ label }}{{ index === 0 ? ' (obrigatória)' : ' (opcional)' }}
+              <input type="file" accept="image/png,image/jpeg" [required]="index === 0"
+                     (change)="selectImage(index, $event)" />
+            </label>
+          }
+          <label class="admin-wide">Descrição <textarea name="description" rows="3" required maxlength="4000"
+                                                       [(ngModel)]="draft.description"></textarea></label>
+        </div>
+        @if (error()) { <p class="admin-error" role="alert">{{ error() }}</p> }
+        <div class="admin-actions">
+          <button class="admin-secondary" type="button" (click)="cancel()" [disabled]="saving()">Cancelar</button>
+          <button class="admin-primary" type="submit"
+                  [disabled]="newWandForm.invalid || !selectedImages[0] || !draft.name.trim() || !draft.description.trim() || saving()">Cadastrar</button>
+        </div>
+      </form>
+    } @else {
+      <form class="admin-editor-form" #adjustForm="ngForm" (ngSubmit)="adjustStock(current.item)">
+        <h2 id="stock-editor-title">Ajustar estoque</h2>
+        <p><strong>{{ current.item.name }}</strong> · {{ number.format(current.item.stock) }} em estoque</p>
+        <div class="admin-fields">
+          <label>Movimento
+            <select name="direction" [(ngModel)]="direction">
+              <option value="in">Adicionar unidades</option>
+              <option value="out">Retirar unidades</option>
+            </select>
+          </label>
+          <label>Quantidade
+            <input name="quantity" type="number" min="1" max="2147483647" step="1" required [(ngModel)]="quantity" />
+          </label>
+        </div>
+        @if (error()) { <p class="admin-error" role="alert">{{ error() }}</p> }
+        <div class="admin-actions">
+          <button class="admin-secondary" type="button" (click)="cancel()" [disabled]="saving()">Cancelar</button>
+          <button class="admin-primary" type="submit" [disabled]="adjustForm.invalid || saving()">Salvar ajuste</button>
+        </div>
+      </form>
+    }
+  }
+</dialog>

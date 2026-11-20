@@ -63,6 +63,11 @@ export class AuthPage {
     this.auth.login(this.loginForm).subscribe({
       next: (response: LoginResponse) => {
         this.auth.setSession(response);
+        if (response.user.role === 'ADMIN') {
+          this.loading.set(false);
+          void this.router.navigateByUrl('/admin');
+          return;
+        }
         this.cart.mergeGuestCart().subscribe({
           next: ({ skippedUnits }) => {
             this.loading.set(false);
@@ -103,7 +108,9 @@ export class AuthPage {
 
   private handleError(error: unknown): void {
     if (error instanceof HttpErrorResponse) {
-      const apiMessage = error.error?.fieldErrors?.birthDate ?? error.error?.message;
+      const apiMessage = error.error?.fieldErrors?.birthDate
+        ?? error.error?.fieldErrors?.password
+        ?? error.error?.message;
       this.errorMessage.set(typeof apiMessage === 'string'
         ? apiMessage
         : 'Não foi possível concluir a solicitação. Confira os dados e tente novamente.');

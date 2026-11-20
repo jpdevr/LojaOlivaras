@@ -521,7 +521,7 @@ app-store-icon svg {
 }
 .page-shell > h1 { color: var(--panel-ink); text-shadow: var(--panel-heading-shadow); }
 .page-shell > p a { color: var(--panel-link); }
-.page-shell > .page-lede, .page-shell > [role='status'] { color: var(--panel-ink); }
+.page-shell > [role='status'] { color: var(--panel-ink); }
 .page-shell > [role='alert'] { color: var(--hall-ink); border-color: var(--gold); background: var(--frame-ink); }
 .home-page { width: min(calc(100% - 48px), 1440px); margin-top: 20px; }
 .home-stage:has(.house-gallery) .home-page { margin-top: 0; }

@@ -102,7 +102,6 @@ public class AddressEntity {
     void beforeUpdate() { updatedAt = Instant.now(); }
 
     public UUID getId() { return id; }
-    public UserEntity getUser() { return user; }
     public String getLabel() { return label; }
     public String getRecipient() { return recipient; }
     public String getZipCode() { return zipCode; }

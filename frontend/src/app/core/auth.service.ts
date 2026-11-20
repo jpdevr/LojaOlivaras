@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
+import { API_BASE_URL } from './api';
 
 export interface LoginRequest {
   email: string;
@@ -33,7 +34,7 @@ export interface LoginResponse {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly authUrl = 'http://localhost:8080/lojaolivaras/api/auth';
+  private readonly authUrl = `${API_BASE_URL}/auth`;
   private accessToken: string | null = null;
   private readonly currentUser = signal<UserResponse | null>(null);
 

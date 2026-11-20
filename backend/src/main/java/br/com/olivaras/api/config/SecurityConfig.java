@@ -2,6 +2,7 @@ package br.com.olivaras.api.config;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import br.com.olivaras.api.auth.repository.UserRepository;
+import jakarta.servlet.DispatcherType;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -65,10 +66,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/health", "/actuator/health", "/actuator/info",
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers("/api/v1/health", "/actuator/health",
                                 "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
                                 "/lojaolivaras/api/auth/register", "/lojaolivaras/api/auth/login",
-                                "/lojaolivaras/api/auth/google", "/lojaolivaras/api/catalogo/**")
+                                "/lojaolivaras/api/catalogo/**")
                         .permitAll()
                         .requestMatchers("/lojaolivaras/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/lojaolivaras/api/profile", "/lojaolivaras/api/profile/**",

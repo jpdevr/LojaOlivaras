@@ -1,5 +1,4 @@
 import { DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
@@ -7,6 +6,7 @@ import { finalize } from 'rxjs';
 import { CheckoutService, OrderResponse, PageResponse } from '../core/checkout.service';
 import { orderLabels } from '../shared/order-labels';
 import { StoreNavigation } from '../shared/store-navigation';
+import { apiErrorMessage } from '../core/api';
 
 @Component({
   selector: 'app-orders-page',
@@ -38,8 +38,7 @@ export class OrdersPage {
     ).subscribe({
       next: (history) => this.history.set(history),
       error: (error: unknown) => {
-        const message = error instanceof HttpErrorResponse ? error.error?.message : null;
-        this.errorMessage.set(typeof message === 'string' ? message : 'Não foi possível carregar seus pedidos.');
+        this.errorMessage.set(apiErrorMessage(error, 'Não foi possível carregar seus pedidos.'));
       },
     });
   }

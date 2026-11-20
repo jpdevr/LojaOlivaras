@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { UserResponse } from './auth.service';
+import { API_BASE_URL } from './api';
 
 export interface ProfileUpdate {
   profileName: string;
@@ -47,7 +48,7 @@ export interface AddressRequest {
 @Injectable({ providedIn: 'root' })
 export class ProfileService {
   private readonly http = inject(HttpClient);
-  private readonly profileUrl = 'http://localhost:8080/lojaolivaras/api/profile';
+  private readonly profileUrl = `${API_BASE_URL}/profile`;
   private readonly addressUrl = `${this.profileUrl}/address`;
 
   getProfile(): Observable<UserResponse> {

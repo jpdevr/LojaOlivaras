@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { API_BASE_URL } from '../core/api';
 import { wandArt } from './product-art';
 
 let nextOutlineId = 0;
@@ -6,7 +7,7 @@ let nextOutlineId = 0;
 @Component({
   selector: 'app-wand-image',
   template: `
-    @if (imageUrl(); as url) {
+    @if (resolvedUrl(); as url) {
       <img class="wand-photo" [src]="url" [alt]="name()" loading="lazy" decoding="async">
     } @else if (art(); as visual) {
       <svg class="wand-sheet-crop" [class.is-reference]="visual.kind === 'reference'"
@@ -31,5 +32,9 @@ export class WandImage {
   readonly outlineId = 'wand-outline-' + nextOutlineId++;
   readonly name = input.required<string>();
   readonly imageUrl = input<string | null>(null);
+  readonly resolvedUrl = computed(() => {
+    const url = this.imageUrl();
+    return url?.startsWith('/lojaolivaras/api/catalogo/imagens/') ? new URL(url, API_BASE_URL).href : url;
+  });
   readonly art = computed(() => wandArt(this.name()));
 }

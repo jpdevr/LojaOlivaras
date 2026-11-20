@@ -4,12 +4,10 @@ import br.com.olivaras.api.address.repository.AddressRepository;
 import br.com.olivaras.api.auth.dto.UserResponse;
 import br.com.olivaras.api.auth.entity.UserEntity;
 import br.com.olivaras.api.auth.repository.UserRepository;
-import br.com.olivaras.api.auth.service.GoogleTokenVerifier;
 import br.com.olivaras.api.order.service.CustomerCommerceCleanupService;
 import br.com.olivaras.api.profile.dto.ChangePasswordRequest;
 import br.com.olivaras.api.profile.dto.DeleteAccountRequest;
 import br.com.olivaras.api.profile.dto.UpdateProfileRequest;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -23,15 +21,13 @@ public class ProfileService {
     private final UserRepository users;
     private final AddressRepository addresses;
     private final PasswordEncoder passwordEncoder;
-    private final GoogleTokenVerifier googleTokenVerifier;
     private final CustomerCommerceCleanupService commerceCleanup;
 
     public ProfileService(UserRepository users, AddressRepository addresses, PasswordEncoder passwordEncoder,
-                         GoogleTokenVerifier googleTokenVerifier, CustomerCommerceCleanupService commerceCleanup) {
+                          CustomerCommerceCleanupService commerceCleanup) {
         this.users = users;
         this.addresses = addresses;
         this.passwordEncoder = passwordEncoder;
-        this.googleTokenVerifier = googleTokenVerifier;
         this.commerceCleanup = commerceCleanup;
     }
 
@@ -55,7 +51,7 @@ public class ProfileService {
         String currentHash = user.getPasswordHash();
         if (currentHash == null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Esta conta usa login Google e não possui senha local para alterar");
+                    "Esta conta não possui senha para alterar");
         }
         if (!passwordEncoder.matches(request.currentPassword(), currentHash)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha atual incorreta");
@@ -67,25 +63,13 @@ public class ProfileService {
     public void deleteAccount(UUID userId, DeleteAccountRequest request) {
         UserEntity user = users.findActiveByIdForUpdate(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Perfil não encontrado"));
-        if (user.getPasswordHash() != null) {
-            if (request.currentPassword() == null || request.currentPassword().isBlank()
-                    || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Confirme a exclusão informando sua senha atual");
-            }
-        } else if (user.getGoogleSubject() != null) {
-            if (request.googleIdToken() == null || request.googleIdToken().isBlank()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Confirme a exclusão autenticando novamente com o Google");
-            }
-            GoogleTokenVerifier.GoogleIdentity identity = googleTokenVerifier.verifyFresh(
-                    request.googleIdToken(), Duration.ofMinutes(5));
-            if (!user.getGoogleSubject().equals(identity.subject())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "A autenticação Google não corresponde a esta conta");
-            }
-        } else {
+        if (user.getPasswordHash() == null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Método de autenticação indisponível");
+        }
+        if (request.currentPassword() == null || request.currentPassword().isBlank()
+                || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Confirme a exclusão informando sua senha atual");
         }
 
         commerceCleanup.anonymize(userId);

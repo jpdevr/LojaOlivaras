@@ -1,14 +1,20 @@
 package br.com.olivaras.api.catalog.controller;
 
 import br.com.olivaras.api.catalog.dto.CatalogItemResponse;
+import br.com.olivaras.api.catalog.service.CatalogImageStorage;
 import br.com.olivaras.api.catalog.service.CatalogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,8 +27,12 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Catálogo", description = "Consulta pública de varinhas disponíveis na loja")
 public class CatalogController {
     private final CatalogService catalog;
+    private final CatalogImageStorage images;
 
-    public CatalogController(CatalogService catalog) { this.catalog = catalog; }
+    public CatalogController(CatalogService catalog, CatalogImageStorage images) {
+        this.catalog = catalog;
+        this.images = images;
+    }
 
     @GetMapping("/list-item")
     @Operation(summary = "Lista os itens ativos do catálogo", description = "Paginação: page começa em zero; size aceita de 1 a 100.")
@@ -51,4 +61,14 @@ public class CatalogController {
     @GetMapping("/item-detail/{id}/related")
     @Operation(summary = "Lista até três varinhas com características em comum")
     public List<CatalogItemResponse> related(@PathVariable UUID id) { return catalog.related(id); }
+
+    @GetMapping("/imagens/{id}.{extension:jpg|png}")
+    @Operation(summary = "Exibe uma imagem local cadastrada no estoque")
+    public ResponseEntity<Resource> image(@PathVariable UUID id, @PathVariable String extension) {
+        MediaType type = "png".equals(extension) ? MediaType.IMAGE_PNG : MediaType.IMAGE_JPEG;
+        return ResponseEntity.ok()
+                .contentType(type)
+                .cacheControl(CacheControl.maxAge(30, TimeUnit.DAYS).cachePublic())
+                .body(images.load(id, extension));
+    }
 }

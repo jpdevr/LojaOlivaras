@@ -1,0 +1,88 @@
+<div class="admin-heading">
+  <h1>Vendas</h1>
+  <label class="admin-visually-hidden" for="sales-period">Período de vendas</label>
+  <select id="sales-period" #period (change)="days.set(+period.value)">
+    <option value="7">Últimos 7 dias</option>
+    <option value="30" selected>Últimos 30 dias</option>
+    <option value="90">Últimos 90 dias</option>
+  </select>
+</div>
+
+@if (error()) {
+  <div class="arch-frame admin-panel admin-empty">
+    <p class="admin-error" role="alert">Não foi possível carregar as vendas.</p>
+    <button class="admin-secondary" type="button" (click)="reload()">Tentar novamente</button>
+  </div>
+} @else if (dashboard(); as sales) {
+  <dl class="admin-metrics">
+    <div class="arch-frame admin-panel">
+      <dt>Receita aprovada</dt>
+      <dd>{{ number.format(sales.approvedRevenue) }} <small>galeões</small></dd>
+    </div>
+    <div class="arch-frame admin-panel">
+      <dt>Pedidos no período</dt>
+      <dd>{{ number.format(sales.orderCount) }}</dd>
+    </div>
+    <div class="arch-frame admin-panel">
+      <dt>Varinhas vendidas</dt>
+      <dd>{{ number.format(sales.unitsSold) }}</dd>
+    </div>
+  </dl>
+
+  <section class="arch-frame admin-panel admin-section" aria-labelledby="sales-by-day">
+    <h2 id="sales-by-day">Receita por dia <small>em galeões</small></h2>
+    @if (maxRevenue(); as max) {
+      <figure class="admin-chart">
+        <div class="admin-chart-scale" aria-hidden="true">
+          <span>{{ number.format(max) }}</span>
+          <span>{{ number.format(max / 2) }}</span>
+          <span>0</span>
+        </div>
+        <div class="admin-chart-columns">
+          <ul class="admin-chart-bars" aria-label="Receita por dia, em galeões">
+            @for (day of sales.dailySales; track day.date) {
+              <li [attr.title]="formatDay(day.date) + ' · ' + number.format(day.revenue) + ' galeões'">
+                <span class="admin-visually-hidden">{{ formatDay(day.date) }}: {{ number.format(day.revenue) }} galeões</span>
+                <span class="admin-chart-bar" [style.height.%]="day.revenue / max * 100" aria-hidden="true"></span>
+              </li>
+            }
+          </ul>
+          <div class="admin-chart-dates" aria-hidden="true">
+            @for (day of sales.dailySales; track day.date; let index = $index; let last = $last) {
+              @if (days() === 7 || last || (index % (days() === 30 ? 7 : 21) === 0 && index < days() - 2)) {
+                <span>{{ formatDay(day.date) }}</span>
+              }
+            }
+          </div>
+        </div>
+      </figure>
+    } @else {
+      <p class="admin-empty">Sem receita neste período.</p>
+    }
+  </section>
+
+  <section class="arch-frame admin-panel admin-section" aria-labelledby="recent-orders">
+    <h2 id="recent-orders">Pedidos recentes</h2>
+    @if (sales.recentOrders.length) {
+      <div class="admin-scroll" tabindex="0" role="region" aria-label="Tabela de pedidos recentes">
+        <table class="admin-table admin-orders-table">
+          <thead><tr><th scope="col">Pedido</th><th scope="col">Data</th><th scope="col">Pagamento</th><th scope="col">Total</th></tr></thead>
+          <tbody>
+            @for (order of sales.recentOrders; track order.id) {
+              <tr>
+                <td><code [attr.title]="order.id">{{ order.id }}</code></td>
+                <td><time [attr.datetime]="order.createdAt">{{ formatDate(order.createdAt) }}</time></td>
+                <td><span [class.admin-positive]="order.paymentStatus === 'SIMULATED_APPROVED'">{{ paymentLabel(order.paymentStatus) }}</span></td>
+                <td>{{ number.format(order.total) }} galeões</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="admin-empty">Nenhum pedido neste período.</p>
+    }
+  </section>
+} @else {
+  <p class="arch-frame admin-panel admin-empty" role="status">Carregando vendas…</p>
+}

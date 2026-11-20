@@ -41,5 +41,4 @@ public class ShoppingCartEntity {
     void beforeUpdate() { updatedAt = Instant.now(); }
 
     public UUID getId() { return id; }
-    public UserEntity getUser() { return user; }
 }

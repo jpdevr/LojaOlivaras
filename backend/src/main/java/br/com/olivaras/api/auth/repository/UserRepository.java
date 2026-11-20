@@ -11,7 +11,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByEmailIgnoreCase(String email);
-    Optional<UserEntity> findByGoogleSubject(String googleSubject);
     Optional<UserEntity> findByIdAndActiveTrue(UUID id);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from UserEntity u where u.id = :id and u.active = true")

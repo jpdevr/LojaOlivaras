@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
@@ -8,6 +7,7 @@ import { DivinationQuestion, DivinationService, PersonalWand } from '../core/div
 import { StoreIcon } from '../shared/store-icon';
 import { StoreNavigation } from '../shared/store-navigation';
 import { WandImage } from '../shared/wand-image';
+import { apiErrorMessage } from '../core/api';
 
 @Component({
   selector: 'app-divination-page',
@@ -101,7 +101,7 @@ export class DivinationPage {
         this.focusStage();
       },
       error: (error: unknown) => {
-        this.actionError.set(this.errorText(error, 'Não foi possível revelar sua varinha. Tente novamente.'));
+        this.actionError.set(apiErrorMessage(error, 'Não foi possível revelar sua varinha. Tente novamente.'));
         this.focusStage();
       },
     });
@@ -119,7 +119,7 @@ export class DivinationPage {
       finalize(() => this.adding.set(false)),
     ).subscribe({
       next: () => void this.router.navigate(['/cart']),
-      error: (error: unknown) => this.actionError.set(this.errorText(error, 'Não foi possível levar sua varinha ao carrinho.')),
+      error: (error: unknown) => this.actionError.set(apiErrorMessage(error, 'Não foi possível levar sua varinha ao carrinho.')),
     });
   }
 
@@ -156,7 +156,7 @@ export class DivinationPage {
         this.actionError.set(null);
         this.load(true);
       },
-      error: (error: unknown) => this.destroyError.set(this.errorText(error, 'Não foi possível destruir a varinha. Tente novamente.')),
+      error: (error: unknown) => this.destroyError.set(apiErrorMessage(error, 'Não foi possível destruir a varinha. Tente novamente.')),
     });
   }
 
@@ -164,10 +164,5 @@ export class DivinationPage {
 
   private focusStage(): void {
     afterNextRender(() => this.title()?.nativeElement.focus(), { injector: this.injector });
-  }
-
-  private errorText(error: unknown, fallback: string): string {
-    const message = error instanceof HttpErrorResponse ? error.error?.message : null;
-    return typeof message === 'string' ? message : fallback;
   }
 }

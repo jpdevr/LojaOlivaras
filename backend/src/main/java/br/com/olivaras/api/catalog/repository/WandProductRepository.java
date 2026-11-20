@@ -20,6 +20,11 @@ public interface WandProductRepository extends JpaRepository<WandProductEntity, 
 
     Optional<WandProductEntity> findByCustomerOwnerIdAndActiveTrue(UUID customerId);
 
+    Page<WandProductEntity> findByCustomerOwnerIdIsNullAndNameContainingIgnoreCase(String name, Pageable pageable);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<WandProductEntity> findByIdAndCustomerOwnerIdIsNull(UUID id);
+
     @Query("""
             select p from WandProductEntity p where p.id = :id and p.active = true
               and (p.customerOwnerId is null or p.customerOwnerId = :customerId)

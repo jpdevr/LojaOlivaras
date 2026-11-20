@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { API_BASE_URL } from './api';
 
 export interface CatalogItem {
   id: string;
@@ -14,11 +15,12 @@ export interface CatalogItem {
   maker: string | null;
   description: string;
   canonTier: string;
-  sourceReference: string;
+  sourceReference?: string;
   priceGalleons: number;
   available: boolean;
   stock: number;
   imageUrl: string | null;
+  imageUrls?: string[];
 }
 
 export interface CatalogPage {
@@ -32,7 +34,7 @@ export interface CatalogPage {
 @Injectable({ providedIn: 'root' })
 export class CatalogService {
   private readonly http = inject(HttpClient);
-  private readonly catalogUrl = 'http://localhost:8080/lojaolivaras/api/catalogo';
+  private readonly catalogUrl = `${API_BASE_URL}/catalogo`;
 
   list(page = 0, size = 100): Observable<CatalogPage> {
     const params = new HttpParams().set('page', page).set('size', size);

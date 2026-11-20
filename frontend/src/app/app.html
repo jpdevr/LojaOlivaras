@@ -9,11 +9,15 @@
     </filter>
   </defs>
 </svg>
-<div class="store-fog" aria-hidden="true">
-  <span class="store-fog-band store-fog-high"></span>
-  <span class="store-fog-band store-fog-mid"></span>
-  <span class="store-fog-band store-fog-low"></span>
-</div>
+@if (!adminMode()) {
+  <div class="store-fog" aria-hidden="true">
+    <span class="store-fog-band store-fog-high"></span>
+    <span class="store-fog-band store-fog-mid"></span>
+    <span class="store-fog-band store-fog-low"></span>
+  </div>
+}
 <router-outlet />
-<app-wand-details-dialog />
-<div #pageVeil class="page-transition-veil" aria-hidden="true"></div>
+@if (!adminMode()) {
+  <app-wand-details-dialog />
+  <div #pageVeil class="page-transition-veil" aria-hidden="true"></div>
+}

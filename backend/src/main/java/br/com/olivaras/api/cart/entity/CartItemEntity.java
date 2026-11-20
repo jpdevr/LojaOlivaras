@@ -56,7 +56,6 @@ public class CartItemEntity {
     void beforeUpdate() { updatedAt = Instant.now(); }
 
     public UUID getId() { return id; }
-    public ShoppingCartEntity getCart() { return cart; }
     public WandProductEntity getProduct() { return product; }
     public int getQuantity() { return quantity; }
 }

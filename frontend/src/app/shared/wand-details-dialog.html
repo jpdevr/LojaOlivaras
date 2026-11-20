@@ -11,7 +11,18 @@
     } @else if (wand(); as item) {
       <div class="wand-dialog-layout" [class.with-related]="related().length > 0">
         <div class="wand-dialog-main">
-          <app-wand-image class="wand-product-image" [name]="item.name" [imageUrl]="item.imageUrl" />
+          <app-wand-image class="wand-product-image wand-gallery-photo" [name]="item.name"
+                          [imageUrl]="item.imageUrls?.[activeImage()] ?? item.imageUrl" />
+          @if ((item.imageUrls?.length ?? 0) > 1) {
+            <div class="wand-gallery" role="group" aria-label="Imagens da varinha">
+              @for (url of item.imageUrls; track url; let index = $index) {
+                <button class="wand-gallery-thumbnail" type="button" [attr.aria-label]="'Ver imagem ' + (index + 1)"
+                        [attr.aria-pressed]="activeImage() === index" (click)="activeImage.set(index)">
+                  <app-wand-image [name]="''" [imageUrl]="url" />
+                </button>
+              }
+            </div>
+          }
           <div class="wand-dialog-offer">
             <strong class="wand-product-price">{{ item.priceGalleons }} <span>galeões</span></strong>
             <app-wand-stock [stock]="item.stock" />
@@ -29,7 +40,9 @@
             <div><dt>Fabricante</dt><dd>{{ item.maker || 'Não informado' }}</dd></div>
             <div><dt>Proprietário</dt><dd>{{ item.ownerName || 'Não informado' }}</dd></div>
             <div><dt>Origem da informação</dt><dd>{{ originLabels[item.canonTier] ?? item.canonTier }}</dd></div>
-            <div><dt>Referência</dt><dd><a [href]="item.sourceReference" target="_blank" rel="noopener noreferrer">Consultar fonte</a></dd></div>
+            @if (item.sourceReference; as sourceReference) {
+              <div><dt>Referência</dt><dd><a [href]="sourceReference" target="_blank" rel="noopener noreferrer">Consultar fonte</a></dd></div>
+            }
           </dl>
         </div>
 

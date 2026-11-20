@@ -9,6 +9,18 @@
     @if (!selectedItems().length) {
       <p>Não há itens selecionados. <a routerLink="/cart">Voltar ao carrinho</a></p>
     } @else {
+      <section aria-labelledby="checkout-customer-title">
+        <h2 id="checkout-customer-title">Dados do cliente</h2>
+        <label for="checkout-cpf">CPF</label>
+        <input id="checkout-cpf" name="cpf" type="text" inputmode="numeric" maxlength="14"
+               placeholder="000.000.000-00" required [(ngModel)]="cpf" (blur)="cpfTouched = true"
+               [attr.aria-invalid]="cpfTouched && !validCpf()"
+               [attr.aria-describedby]="cpfTouched && !validCpf() ? 'checkout-cpf-error' : null">
+        @if (cpfTouched && !validCpf()) {
+          <p id="checkout-cpf-error" role="alert">Informe um CPF válido.</p>
+        }
+      </section>
+
       <section aria-labelledby="checkout-address-title">
         <h2 id="checkout-address-title">Endereço de entrega</h2>
         @if (addresses().length === 0) {
